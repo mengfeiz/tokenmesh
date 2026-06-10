@@ -158,6 +158,8 @@ def classify(
     messages: list[dict],
     preferred_tier: Optional[str] = None,   # "fast" | "balanced" | "frontier"
     available_providers: Optional[set[str]] = None,  # providers user has keys for
+    quality_threshold: float = 0.5,         # 0=cost-first, 1=quality-first
+    routing_mode: str = "smart",            # basic | smart
 ) -> ClassificationResult:
     """
     Classify a chat completion request and return routing recommendation.
@@ -167,6 +169,8 @@ def classify(
         preferred_tier: optional override — force a cost tier
         available_providers: set of provider names user has configured keys for
                              (e.g. {"openai", "deepseek"}). If None, all assumed available.
+        quality_threshold: per-project cost vs quality slider (0–1)
+        routing_mode: basic (free tier) or smart (Pro+)
     """
     last_msg = _last_user_message(messages)
     total_chars = _total_message_length(messages)
@@ -189,6 +193,15 @@ def classify(
     # ── Complexity scoring ─────────────────────────────────────────────
     complexity = _score_complexity(last_msg, estimated_tokens, task_type, signals)
 
+    # ── Quality threshold (per-project cost vs quality) ─────────────────
+    quality_threshold = max(0.0, min(1.0, quality_threshold))
+    if quality_threshold >= 0.75:
+        complexity = "high" if complexity != "low" else "medium"
+        signals.append(f"quality_threshold:high:{quality_threshold}")
+    elif quality_threshold <= 0.25:
+        complexity = "low"
+        signals.append(f"quality_threshold:low:{quality_threshold}")
+
     # ── Tier override ──────────────────────────────────────────────────
     if preferred_tier == "frontier":
         task_type = task_type  # keep task, but we'll pick frontier model
@@ -197,9 +210,19 @@ def classify(
     elif preferred_tier == "fast":
         complexity = "low"
         signals.append("tier_override:fast")
+    elif preferred_tier == "balanced":
+        if complexity == "low":
+            complexity = "medium"
+        signals.append("tier_override:balanced")
 
     # ── Model selection ────────────────────────────────────────────────
-    candidates = _ROUTING_TABLE.get((task_type, complexity), [_DEFAULT_FRONTIER, _DEFAULT_FALLBACK])
+    if routing_mode == "basic":
+        candidates = [_DEFAULT_FALLBACK, "openai/gpt-4o-mini"]
+        signals.append("routing_mode:basic")
+    else:
+        candidates = _ROUTING_TABLE.get(
+            (task_type, complexity), [_DEFAULT_FRONTIER, _DEFAULT_FALLBACK]
+        )
 
     # Filter by available providers if specified
     if available_providers:

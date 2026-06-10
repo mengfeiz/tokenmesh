@@ -174,6 +174,30 @@ MODELS: dict[str, ModelSpec] = {
         long_context=True,
         api_base="https://api.moonshot.cn/v1",
     ),
+    # ── Mistral ───────────────────────────────────────────────────────
+    "mistral/mistral-small": ModelSpec(
+        provider="mistral",
+        model_id="mistral-small-latest",
+        display_name="Mistral Small",
+        input_cost_per_1m=0.20,
+        output_cost_per_1m=0.60,
+        context_window=128_000,
+        tier="fast",
+        strong_coding=True,
+        api_base="https://api.mistral.ai/v1",
+    ),
+    "mistral/mistral-large": ModelSpec(
+        provider="mistral",
+        model_id="mistral-large-latest",
+        display_name="Mistral Large",
+        input_cost_per_1m=2.00,
+        output_cost_per_1m=6.00,
+        context_window=128_000,
+        tier="frontier",
+        strong_coding=True,
+        strong_reasoning=True,
+        api_base="https://api.mistral.ai/v1",
+    ),
 }
 
 

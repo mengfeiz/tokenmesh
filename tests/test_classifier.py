@@ -121,6 +121,23 @@ class TestProviderFiltering:
         assert r.recommended_model is not None
 
 
+class TestQualityAndRoutingMode:
+    def test_basic_routing_mode_uses_cheap_default(self):
+        r = classify(
+            make_messages("Prove P != NP with full analysis and tradeoffs"),
+            routing_mode="basic",
+        )
+        assert "routing_mode:basic" in r.signals
+        assert r.recommended_model == "deepseek/deepseek-chat"
+
+    def test_quality_threshold_low_forces_simple_routing(self):
+        r = classify(
+            make_messages("Compare REST vs GraphQL with tradeoffs"),
+            quality_threshold=0.1,
+        )
+        assert any("quality_threshold:low" in s for s in r.signals)
+
+
 class TestLongContext:
     def test_long_message_triggers_long_context(self):
         long_text = "word " * 8000  # ~32k tokens estimate

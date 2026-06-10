@@ -25,6 +25,7 @@ _PROVIDER_BASES = {
     "qwen":       "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "google":     "https://generativelanguage.googleapis.com/v1beta/openai",
     "moonshot":   "https://api.moonshot.cn/v1",
+    "mistral":    "https://api.mistral.ai/v1",
 }
 
 # Anthropic needs special header handling

@@ -22,13 +22,22 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from .auth import (
+    extract_tokenmesh_key,
+    get_auth,
+    init_auth,
+    require_user,
+    resolve_user_hash,
+)
 from .billing import PLANS, get_billing, init_billing
 from .cache import get_cache, init_cache
 from .classifier import classify
 from .config import get_settings
 from .keys import get_api_key, get_available_providers
 from .models import list_models, MODELS
+from .projects import get_projects, init_projects
 from .provider import ProviderClient, calculate_savings, ProviderError
+from .status import check_providers
 from .usage import UsageRecord, get_usage_logger, hash_key, init_usage_logger
 
 log = structlog.get_logger()
@@ -69,6 +78,9 @@ async def lifespan(app: FastAPI):
         db_path=db_path,
     )
 
+    init_auth(db_path)
+    init_projects(db_path)
+
     log.info("tokenmesh.startup", host=settings.host, port=settings.port)
     yield
     await get_usage_logger().stop()
@@ -79,7 +91,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Tokenmesh",
     description="Cost-aware LLM gateway with task-aware routing",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -95,7 +107,136 @@ app.add_middleware(
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "tokenmesh", "version": "0.1.0"}
+    return {"status": "ok", "service": "tokenmesh", "version": "0.2.0"}
+
+
+def _plan_features(user_hash: Optional[str]) -> dict:
+    """Resolve plan-gated features for the caller."""
+    settings = get_settings()
+    if not user_hash:
+        return {
+            "plan": "anonymous",
+            "routing_mode": settings.free_routing_mode,
+            "cache_enabled": False,
+        }
+
+    sub = get_billing().get_subscription(user_hash)
+    plan = sub.get("plan", "free")
+    is_paid = plan in ("pro", "business") and sub.get("status") == "active"
+    return {
+        "plan": plan,
+        "routing_mode": "smart" if is_paid else settings.free_routing_mode,
+        "cache_enabled": is_paid and settings.pro_cache_enabled,
+    }
+
+
+def _resolve_project(request: Request, body: dict):
+    project_id = (
+        body.get("x_tokenmesh_project")
+        or request.headers.get("x-tokenmesh-project")
+    )
+    if not project_id:
+        return None
+    return get_projects().get_by_id(project_id)
+
+
+# ── Auth endpoints ────────────────────────────────────────────────────────────
+
+@app.post("/v1/auth/register")
+async def auth_register(request: Request):
+    """Register with email/password. Returns a Tokenmesh API key (shown once)."""
+    body = await request.json()
+    return get_auth().register(
+        email=body.get("email", ""),
+        password=body.get("password", ""),
+    )
+
+
+@app.post("/v1/auth/login")
+async def auth_login(request: Request):
+    """Login and list existing API key prefixes."""
+    body = await request.json()
+    return get_auth().login(
+        email=body.get("email", ""),
+        password=body.get("password", ""),
+    )
+
+
+@app.post("/v1/auth/keys")
+async def auth_create_key(request: Request):
+    """Create a new API key for the authenticated user."""
+    user = require_user(request)
+    body = await request.json()
+    raw_key = get_auth().create_api_key(user.id, name=body.get("name", "default"))
+    return {"api_key": raw_key, "message": "Save your API key — it will not be shown again."}
+
+
+@app.get("/v1/auth/keys")
+async def auth_list_keys(request: Request):
+    user = require_user(request)
+    return {"api_keys": get_auth().list_api_keys(user.id)}
+
+
+@app.delete("/v1/auth/keys/{key_id}")
+async def auth_revoke_key(key_id: int, request: Request):
+    user = require_user(request)
+    if not get_auth().revoke_api_key(user.id, key_id):
+        raise HTTPException(status_code=404, detail="API key not found")
+    return {"revoked": True}
+
+
+# ── Project endpoints ─────────────────────────────────────────────────────────
+
+@app.post("/v1/projects")
+async def project_create(request: Request):
+    """Create a project with per-project routing configuration."""
+    user = require_user(request)
+    body = await request.json()
+    project = get_projects().create(
+        user_id=user.id,
+        name=body.get("name", "default"),
+        default_tier=body.get("default_tier"),
+        quality_threshold=body.get("quality_threshold", 0.5),
+        baseline_model=body.get("baseline_model", "openai/gpt-4o"),
+        routing_mode=body.get("routing_mode", "smart"),
+        allowed_providers=body.get("allowed_providers"),
+    )
+    return {"project": _project_to_dict(project)}
+
+
+@app.get("/v1/projects")
+async def project_list(request: Request):
+    user = require_user(request)
+    projects = get_projects().list_for_user(user.id)
+    return {"projects": [_project_to_dict(p) for p in projects]}
+
+
+@app.patch("/v1/projects/{project_id}")
+async def project_update(project_id: str, request: Request):
+    user = require_user(request)
+    body = await request.json()
+    project = get_projects().update(project_id, user.id, **body)
+    return {"project": _project_to_dict(project)}
+
+
+def _project_to_dict(project) -> dict:
+    return {
+        "id": project.id,
+        "name": project.name,
+        "default_tier": project.default_tier,
+        "quality_threshold": project.quality_threshold,
+        "baseline_model": project.baseline_model,
+        "routing_mode": project.routing_mode,
+        "allowed_providers": project.allowed_providers,
+    }
+
+
+# ── Provider status ───────────────────────────────────────────────────────────
+
+@app.get("/v1/status/providers")
+async def provider_status():
+    """Live provider health for the reliability dashboard."""
+    return await check_providers()
 
 
 # ── Model list ────────────────────────────────────────────────────────────────
@@ -137,10 +278,29 @@ async def routing_explain(request: Request):
     """
     body = await request.json()
     messages = body.get("messages", [])
-    tier = body.get("x_tokenmesh_tier") or request.headers.get("x-tokenmesh-tier")
-    available = get_available_providers(request)
+    user_hash = resolve_user_hash(request)
+    features = _plan_features(user_hash)
+    project = _resolve_project(request, body)
 
-    result = classify(messages, preferred_tier=tier, available_providers=available or None)
+    tier = (
+        body.get("x_tokenmesh_tier")
+        or request.headers.get("x-tokenmesh-tier")
+        or (project.default_tier if project else None)
+    )
+    available = get_available_providers(request)
+    if project and project.allowed_providers:
+        available = available & set(project.allowed_providers) if available else set(project.allowed_providers)
+
+    routing_mode = project.routing_mode if project else features["routing_mode"]
+    quality_threshold = project.quality_threshold if project else 0.5
+
+    result = classify(
+        messages,
+        preferred_tier=tier,
+        available_providers=available or None,
+        quality_threshold=quality_threshold,
+        routing_mode=routing_mode,
+    )
     spec = MODELS.get(result.recommended_model)
 
     return {
@@ -180,6 +340,12 @@ async def chat_completions(request: Request):
       X-Tokenmesh-Task-Type      — detected task type
     """
     settings = get_settings()
+    if settings.require_auth and not extract_tokenmesh_key(request):
+        raise HTTPException(
+            status_code=401,
+            detail="Tokenmesh API key required. Register at POST /v1/auth/register",
+        )
+
     body = await request.json()
 
     messages = body.get("messages", [])
@@ -190,32 +356,54 @@ async def chat_completions(request: Request):
     max_tokens = body.get("max_tokens")
     temperature = body.get("temperature")
 
+    user_hash = resolve_user_hash(request)
+    features = _plan_features(user_hash)
+    project = _resolve_project(request, body)
+
     # Tokenmesh extensions
+    requested_model = body.get("model", "auto")
     pinned_model = body.get("x_tokenmesh_model") or request.headers.get("x-tokenmesh-model")
     preferred_tier = (
         body.get("x_tokenmesh_tier")
         or request.headers.get("x-tokenmesh-tier")
+        or (project.default_tier if project else None)
         or settings.default_tier
     )
     baseline_model = (
         body.get("x_tokenmesh_baseline")
         or request.headers.get("x-tokenmesh-baseline")
+        or (project.baseline_model if project else None)
         or settings.default_baseline_model
     )
 
     # ── Routing decision ──────────────────────────────────────────────
     available_providers = get_available_providers(request)
+    if project and project.allowed_providers:
+        available_providers = (
+            available_providers & set(project.allowed_providers)
+            if available_providers else set(project.allowed_providers)
+        )
 
+    routing_mode = project.routing_mode if project else features["routing_mode"]
+    quality_threshold = project.quality_threshold if project else 0.5
+    cache_enabled = features["cache_enabled"]
+
+    auto_route = requested_model in ("auto", None) and not pinned_model
     if pinned_model:
         model_key = pinned_model
         classification = None
-    else:
+    elif auto_route or requested_model not in MODELS:
         classification = classify(
             messages,
             preferred_tier=preferred_tier,
             available_providers=available_providers or None,
+            quality_threshold=quality_threshold,
+            routing_mode=routing_mode,
         )
         model_key = classification.recommended_model
+    else:
+        model_key = requested_model
+        classification = None
 
     spec = MODELS.get(model_key)
     if not spec:
@@ -235,7 +423,7 @@ async def chat_completions(request: Request):
 
     # ── Cache lookup ──────────────────────────────────────────────────
     cache = get_cache()
-    if not stream:
+    if cache_enabled and not stream:
         cached = cache.get(messages, model_key=model_key if pinned_model else None)
         if cached:
             cached.pop("_tokenmesh_cached", None)
@@ -249,6 +437,7 @@ async def chat_completions(request: Request):
             }
             await get_usage_logger().log(UsageRecord(
                 model_key=model_key, provider=spec.provider,
+                user_hash=user_hash,
                 task_type=classification.task_type if classification else "pinned",
                 complexity=classification.complexity if classification else None,
                 confidence=classification.confidence if classification else None,
@@ -257,6 +446,7 @@ async def chat_completions(request: Request):
             return JSONResponse(content=cached, headers={
                 "X-Tokenmesh-Model": model_key,
                 "X-Tokenmesh-Cache": "hit",
+                "X-Tokenmesh-Plan": features["plan"],
             })
 
     # ── Execute with failover ─────────────────────────────────────────
@@ -328,13 +518,15 @@ async def chat_completions(request: Request):
     }
 
     # ── Store in cache ────────────────────────────────────────────────
-    cache.set(messages, response_data, used_model_key)
+    if cache_enabled:
+        cache.set(messages, response_data, used_model_key)
 
     # ── Log usage ─────────────────────────────────────────────────────
     usage_rec = response_data.get("_tokenmesh_meta", {})
     await get_usage_logger().log(UsageRecord(
         model_key=used_model_key,
         provider=spec.provider,
+        user_hash=user_hash,
         task_type=classification.task_type if classification else "pinned",
         complexity=classification.complexity if classification else None,
         confidence=classification.confidence if classification else None,
@@ -354,6 +546,7 @@ async def chat_completions(request: Request):
         "X-Tokenmesh-Savings-USD": str(savings["saved_usd"]),
         "X-Tokenmesh-Task-Type":   classification.task_type if classification else "pinned",
         "X-Tokenmesh-Cache":       "miss",
+        "X-Tokenmesh-Plan":        features["plan"],
     }
 
     return JSONResponse(content=response_data, headers=headers)
@@ -403,16 +596,12 @@ async def usage_summary(request: Request, days: int = 30):
     import time
     since_ts = time.time() - days * 86400
 
-    # Identify user from their API key hash (any provider key works)
-    auth = request.headers.get("authorization", "")
-    user_hash = None
-    if auth.lower().startswith("bearer "):
-        key = auth[7:].strip()
-        if key and key != "none":
-            user_hash = hash_key(key)
+    user_hash = resolve_user_hash(request)
 
     summary = get_usage_logger().summary(user_hash=user_hash, since_ts=since_ts)
     summary["period_days"] = days
+    if user_hash:
+        summary["subscription"] = get_billing().get_subscription(user_hash)
 
     return summary
 
@@ -420,12 +609,7 @@ async def usage_summary(request: Request, days: int = 30):
 @app.get("/v1/usage/recent")
 async def usage_recent(request: Request, limit: int = 20):
     """Recent requests log — for debugging and analytics."""
-    auth = request.headers.get("authorization", "")
-    user_hash = None
-    if auth.lower().startswith("bearer "):
-        key = auth[7:].strip()
-        if key and key != "none":
-            user_hash = hash_key(key)
+    user_hash = resolve_user_hash(request)
 
     return {
         "requests": get_usage_logger().recent(limit=min(limit, 100), user_hash=user_hash)
@@ -456,12 +640,9 @@ async def billing_plans():
 @app.get("/v1/billing/subscription")
 async def billing_subscription(request: Request):
     """Get current subscription status for the authenticated user."""
-    auth = request.headers.get("authorization", "")
-    if not auth.lower().startswith("bearer "):
+    user_hash = resolve_user_hash(request)
+    if not user_hash:
         return {"plan": "free", "status": "active"}
-
-    key = auth[7:].strip()
-    user_hash = hash_key(key)
     return get_billing().get_subscription(user_hash)
 
 

@@ -29,10 +29,19 @@ class Settings(BaseSettings):
     qwen_api_key: Optional[str] = None
     google_api_key: Optional[str] = None
     moonshot_api_key: Optional[str] = None
+    mistral_api_key: Optional[str] = None
 
     # Auth
     require_auth: bool = False          # set True in prod to require X-Tokenmesh-Key
     admin_api_keys: list[str] = []      # comma-separated in env: TOKENMESH_ADMIN_API_KEYS
+
+    # Managed mode (platform-held keys + markup)
+    managed_mode_enabled: bool = False
+    managed_markup_pct: float = 6.0     # PRD: 5–8% markup on API spend
+
+    # Plan gating
+    free_routing_mode: str = "basic"    # basic routing for free tier
+    pro_cache_enabled: bool = True      # semantic cache requires Pro+
 
     # Failover
     enable_failover: bool = True

@@ -1,0 +1,13 @@
+services:
+  tokenmesh:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - tokenmesh_data:/root/.tokenmesh
+    restart: unless-stopped
+
+volumes:
+  tokenmesh_data:

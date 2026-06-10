@@ -27,6 +27,7 @@ _HEADER_MAP = {
     "qwen":       "x-qwen-api-key",
     "google":     "x-google-api-key",
     "moonshot":   "x-moonshot-api-key",
+    "mistral":    "x-mistral-api-key",
 }
 
 _ENV_MAP = {
@@ -36,6 +37,7 @@ _ENV_MAP = {
     "qwen":       "qwen_api_key",
     "google":     "google_api_key",
     "moonshot":   "moonshot_api_key",
+    "mistral":    "mistral_api_key",
 }
 
 
@@ -62,7 +64,7 @@ def get_api_key(request: Request, provider: str) -> str:
         auth = request.headers.get("authorization", "")
         if auth.lower().startswith("bearer "):
             key = auth[7:].strip()
-            if key and key != "none":
+            if key and key != "none" and not key.startswith("tm_live_"):
                 return key
 
     # 3. Platform env key (managed mode fallback)
@@ -100,11 +102,11 @@ def get_available_providers(request: Request) -> set[str]:
         if env_attr and getattr(settings, env_attr, None):
             available.add(provider)
 
-    # Check Authorization bearer → openai
+    # Check Authorization bearer → openai (not Tokenmesh platform keys)
     auth = request.headers.get("authorization", "")
     if auth.lower().startswith("bearer "):
         key = auth[7:].strip()
-        if key and key != "none":
+        if key and key != "none" and not key.startswith("tm_live_"):
             available.add("openai")
 
     return available

@@ -24,8 +24,15 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Optional
-import numpy as np
+
 import structlog
+
+try:
+    import numpy as np
+    _NUMPY_AVAILABLE = True
+except ImportError:
+    np = None  # type: ignore
+    _NUMPY_AVAILABLE = False
 
 log = structlog.get_logger()
 
@@ -59,7 +66,9 @@ def _embed(text: str) -> Optional[np.ndarray]:
         return None
 
 
-def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
+def _cosine_similarity(a, b) -> float:
+    if not _NUMPY_AVAILABLE:
+        return 0.0
     # Both already normalised by sentence-transformers
     return float(np.dot(a, b))
 
@@ -78,7 +87,7 @@ def _messages_to_text(messages: list[dict]) -> str:
 
 @dataclass
 class CacheEntry:
-    embedding: np.ndarray
+    embedding: object
     response: dict
     model_key: str
     created_at: float
@@ -203,7 +212,7 @@ class SemanticCache:
 
         if embedding is None:
             # Store without embedding (exact match only)
-            embedding = np.zeros(1)
+            embedding = [] if not _NUMPY_AVAILABLE else np.zeros(1)
 
         entry = CacheEntry(
             embedding=embedding,

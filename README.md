@@ -159,19 +159,76 @@ pytest tests/ -v
 ```
 src/tokenmesh/
   app.py         — FastAPI gateway, routing orchestration
+  auth.py        — Email/password + API key management
+  projects.py    — Per-project routing configuration
   classifier.py  — Rule-based task/complexity classifier
   models.py      — Model registry with pricing
   provider.py    — Async HTTP client for all providers (BYOK)
+  cache.py       — Semantic cache (optional embeddings)
+  usage.py       — SQLite usage/savings log
+  billing.py     — Stripe subscriptions
+  status.py      — Provider health dashboard
   keys.py        — BYOK header extraction
   config.py      — Pydantic settings
   cli.py         — uvicorn entry point
 ```
 
+## Auth & Projects
+
+```bash
+# Register (returns API key — save it)
+curl -X POST http://localhost:8080/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"your-password"}'
+
+# Use your Tokenmesh key
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer tm_live_..." \
+  -H "X-DeepSeek-API-Key: ..." \
+  -d '{"model":"auto","messages":[{"role":"user","content":"Hello"}]}'
+```
+
+Create a project to tune cost vs quality per app:
+
+```bash
+curl -X POST http://localhost:8080/v1/projects \
+  -H "Authorization: Bearer tm_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-app","quality_threshold":0.3,"routing_mode":"smart"}'
+```
+
+Pass `X-Tokenmesh-Project: proj_xxx` on requests to apply project routing rules.
+
+## Plans (PRD-aligned)
+
+| Tier | Price | Routing | Semantic cache |
+|------|-------|---------|----------------|
+| Free | $0 | Basic | No |
+| Pro | $9/mo | Smart task routing | Yes |
+| Business | $79/mo | Smart + teams/SSO (roadmap) | Yes |
+
+Upgrade via `POST /v1/billing/checkout`. Savings dashboard: `GET /v1/usage/summary`.
+
+## Provider status
+
+```bash
+curl http://localhost:8080/v1/status/providers
+```
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
 ## Roadmap
 
+- [x] Usage/savings SQLite log
+- [x] Stripe billing integration
+- [x] API key management
+- [x] Per-project routing config
+- [x] Semantic cache (in-memory; optional embeddings)
+- [x] Docker Compose setup
 - [ ] ML classifier v2 (train on routing data)
-- [ ] Semantic cache (Redis + embeddings)
-- [ ] Usage/savings SQLite log
-- [ ] Stripe billing integration
-- [ ] Multi-user API key management
-- [ ] Docker Compose setup
+- [ ] Managed mode billing (5–8% markup)
+- [ ] Redis-backed semantic cache
