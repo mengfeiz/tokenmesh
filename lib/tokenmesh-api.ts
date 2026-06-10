@@ -60,11 +60,12 @@ export async function api<T = unknown>(
 ): Promise<T> {
   const res = await fetch(`${API_ORIGIN}${path}`, opts)
   const text = await res.text()
-  let data: T & { detail?: unknown; error?: { message?: string } }
+  type ApiBody = T & { detail?: unknown; error?: { message?: string }; raw?: string }
+  let data: ApiBody
   try {
-    data = JSON.parse(text)
+    data = JSON.parse(text) as ApiBody
   } catch {
-    data = { raw: text } as T & { detail?: unknown }
+    data = { raw: text } as unknown as ApiBody
   }
   if (!res.ok) {
     const detail = data.detail
