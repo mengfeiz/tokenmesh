@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:web": "next build && node scripts/assemble-web.mjs",
     "start": "next start",
     "lint": "next lint"
   },

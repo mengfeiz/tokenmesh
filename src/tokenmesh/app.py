@@ -22,7 +22,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from .auth import (
     extract_tokenmesh_key,
@@ -114,22 +115,10 @@ app.add_middleware(
 )
 
 
-# ── Web UI ────────────────────────────────────────────────────────────────────
+# ── Web UI (Next.js static export → src/tokenmesh/web/) ───────────────────────
 
-_STATIC_DIR = Path(__file__).parent / "static"
-_INDEX_HTML = _STATIC_DIR / "index.html"
-
-
-@app.get("/")
-async def root():
-    """Serve the try-it web UI."""
-    if _INDEX_HTML.is_file():
-        return FileResponse(_INDEX_HTML, media_type="text/html; charset=utf-8")
-    return {
-        "service": "tokenmesh",
-        "version": "0.2.0",
-        "docs": "/docs",
-    }
+_WEB_DIR = Path(__file__).parent / "web"
+_LEGACY_UI = Path(__file__).parent / "static" / "index.html"
 
 
 @app.get("/health")
@@ -815,3 +804,20 @@ async def billing_webhook(request: Request):
         raise HTTPException(status_code=400, detail=result["error"])
 
     return result
+
+
+# Marketing site + /console (must be registered after all API routes)
+if _WEB_DIR.is_dir():
+    from fastapi.responses import FileResponse
+
+    @app.get("/console")
+    async def web_console():
+        return FileResponse(_WEB_DIR / "console.html", media_type="text/html; charset=utf-8")
+
+    app.mount("/", StaticFiles(directory=_WEB_DIR, html=True), name="web")
+elif _LEGACY_UI.is_file():
+    from fastapi.responses import FileResponse
+
+    @app.get("/")
+    async def legacy_root():
+        return FileResponse(_LEGACY_UI, media_type="text/html; charset=utf-8")

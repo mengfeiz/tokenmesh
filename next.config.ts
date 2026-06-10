@@ -1,14 +1,14 @@
 import type { NextConfig } from "next"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 
-const API = process.env.TOKENMESH_API_URL || "http://localhost:8080"
+const projectRoot = path.dirname(fileURLToPath(import.meta.url))
 
+/** Static export bundled into the FastAPI image for single-service deploy (Railway). */
 const nextConfig: NextConfig = {
-  async rewrites() {
-    return [
-      { source: "/v1/:path*", destination: `${API}/v1/:path*` },
-      { source: "/health", destination: `${API}/health` },
-    ]
-  },
+  output: "export",
+  images: { unoptimized: true },
+  outputFileTracingRoot: projectRoot,
 }
 
 export default nextConfig

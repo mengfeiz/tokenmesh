@@ -2,11 +2,12 @@ export const LS_TM = "tokenmesh_api_key"
 export const LS_EMAIL = "tokenmesh_email"
 export const LS_KEYS = "tokenmesh_provider_keys"
 
-/** Override with NEXT_PUBLIC_TOKENMESH_API in production. */
+/** Same-origin in production; localhost:8080 in local Next dev. */
 export const API_ORIGIN =
-  process.env.NEXT_PUBLIC_TOKENMESH_API || "http://localhost:8080"
+  process.env.NEXT_PUBLIC_TOKENMESH_API ??
+  (process.env.NODE_ENV === "development" ? "http://localhost:8080" : "")
 
-export const API_V1 = `${API_ORIGIN}/v1`
+export const API_V1 = API_ORIGIN ? `${API_ORIGIN}/v1` : "/v1"
 
 const PROVIDER_HEADER: Record<string, string> = {
   openai: "OpenAI",

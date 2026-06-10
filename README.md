@@ -41,7 +41,14 @@ npm install && npm run dev
 - 开发者控制台：**http://localhost:3000/console**（注册 Key、复制代码、省钱看板）
 - API 文档：http://localhost:8080/docs
 
-也可直接访问 **http://localhost:8080/**（内置静态控制台，与 `/console` 功能相同）。
+**生产部署（Railway / Docker）**：`docker build` 会自动把 Next.js 营销站打进镜像，根路径 `/` 为营销首页，`/console` 为开发者控制台，API 仍在 `/v1`。
+
+```bash
+docker build -t tokenmesh .
+docker run -p 8080:8080 tokenmesh
+```
+
+本地开发仍可分开跑：`tokenmesh`（8080）+ `npm run dev`（3000）。
 
 ## 一键接入 Tokenmesh
 
