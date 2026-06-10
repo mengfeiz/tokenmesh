@@ -118,7 +118,6 @@ app.add_middleware(
 # ── Web UI (Next.js static export → src/tokenmesh/web/) ───────────────────────
 
 _WEB_DIR = Path(__file__).parent / "web"
-_LEGACY_UI = Path(__file__).parent / "static" / "index.html"
 
 
 @app.get("/health")
@@ -844,13 +843,14 @@ if _WEB_DIR.is_dir() and (_WEB_DIR / "index.html").is_file():
         web_dir=str(_WEB_DIR),
         console_html=bool(_console_path),
     )
-elif _LEGACY_UI.is_file():
-    from fastapi.responses import FileResponse
-
+else:
     @app.get("/")
     @app.get("/console")
     @app.get("/console/")
-    async def legacy_root():
-        return FileResponse(_LEGACY_UI, media_type="text/html; charset=utf-8")
+    async def web_not_bundled():
+        raise HTTPException(
+            status_code=503,
+            detail="Marketing UI not bundled. Run: npm run build:web",
+        )
 
-    log.warning("tokenmesh.web_ui", mode="legacy", hint="Rebuild with Dockerfile for Next.js UI")
+    log.error("tokenmesh.web_ui", mode="missing", web_dir=str(_WEB_DIR))

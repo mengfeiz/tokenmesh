@@ -37,6 +37,4 @@ tokenmesh = "tokenmesh.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tokenmesh"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/tokenmesh/static/index.html" = "tokenmesh/static/index.html"
+artifacts = ["src/tokenmesh/web"]

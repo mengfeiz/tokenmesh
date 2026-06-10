@@ -12,6 +12,5 @@ htmlcov/
 node_modules/
 .next/
 .env.local
-src/tokenmesh/web/
 web-dist/
 out/
