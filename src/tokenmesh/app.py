@@ -807,17 +807,50 @@ async def billing_webhook(request: Request):
 
 
 # Marketing site + /console (must be registered after all API routes)
-if _WEB_DIR.is_dir():
+def _console_html() -> Optional[Path]:
+    for candidate in (
+        _WEB_DIR / "console.html",
+        _WEB_DIR / "console" / "index.html",
+    ):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+if _WEB_DIR.is_dir() and (_WEB_DIR / "index.html").is_file():
     from fastapi.responses import FileResponse
 
-    @app.get("/console")
-    async def web_console():
-        return FileResponse(_WEB_DIR / "console.html", media_type="text/html; charset=utf-8")
+    _console_path = _console_html()
 
-    app.mount("/", StaticFiles(directory=_WEB_DIR, html=True), name="web")
+    @app.get("/")
+    async def web_home():
+        return FileResponse(_WEB_DIR / "index.html", media_type="text/html; charset=utf-8")
+
+    @app.get("/console")
+    @app.get("/console/")
+    async def web_console():
+        path = _console_path or (_WEB_DIR / "console.html")
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="Developer console not bundled")
+        return FileResponse(path, media_type="text/html; charset=utf-8")
+
+    _next_dir = _WEB_DIR / "_next"
+    if _next_dir.is_dir():
+        app.mount("/_next", StaticFiles(directory=_next_dir), name="next_static")
+
+    log.info(
+        "tokenmesh.web_ui",
+        mode="nextjs",
+        web_dir=str(_WEB_DIR),
+        console_html=bool(_console_path),
+    )
 elif _LEGACY_UI.is_file():
     from fastapi.responses import FileResponse
 
     @app.get("/")
+    @app.get("/console")
+    @app.get("/console/")
     async def legacy_root():
         return FileResponse(_LEGACY_UI, media_type="text/html; charset=utf-8")
+
+    log.warning("tokenmesh.web_ui", mode="legacy", hint="Rebuild with Dockerfile for Next.js UI")
