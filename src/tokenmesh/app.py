@@ -18,9 +18,11 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 import structlog
+from pathlib import Path
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
 from .auth import (
     extract_tokenmesh_key,
@@ -38,6 +40,8 @@ from .models import list_models, MODELS
 from .projects import get_projects, init_projects
 from .provider import ProviderClient, calculate_savings, ProviderError
 from .status import check_providers
+from .evolution import get_evolution, init_evolution
+from .optimizer import optimize_request
 from .usage import UsageRecord, get_usage_logger, hash_key, init_usage_logger
 
 log = structlog.get_logger()
@@ -62,7 +66,6 @@ async def lifespan(app: FastAPI):
     )
 
     # Initialise usage logger
-    from pathlib import Path
     db_path = Path(settings.usage_db_path) if settings.usage_db_path else None
     usage = init_usage_logger(db_path)
     await usage.start()
@@ -80,6 +83,14 @@ async def lifespan(app: FastAPI):
 
     init_auth(db_path)
     init_projects(db_path)
+
+    if settings.evolution_enabled:
+        init_evolution(
+            db_path,
+            min_samples=settings.evolution_min_samples,
+            min_savings_pct=settings.evolution_min_savings_pct,
+            lookback_days=settings.evolution_lookback_days,
+        )
 
     log.info("tokenmesh.startup", host=settings.host, port=settings.port)
     yield
@@ -103,7 +114,23 @@ app.add_middleware(
 )
 
 
-# ── Health ────────────────────────────────────────────────────────────────────
+# ── Web UI ────────────────────────────────────────────────────────────────────
+
+_STATIC_DIR = Path(__file__).parent / "static"
+_INDEX_HTML = _STATIC_DIR / "index.html"
+
+
+@app.get("/")
+async def root():
+    """Serve the try-it web UI."""
+    if _INDEX_HTML.is_file():
+        return FileResponse(_INDEX_HTML, media_type="text/html; charset=utf-8")
+    return {
+        "service": "tokenmesh",
+        "version": "0.2.0",
+        "docs": "/docs",
+    }
+
 
 @app.get("/health")
 async def health():
@@ -117,16 +144,21 @@ def _plan_features(user_hash: Optional[str]) -> dict:
         return {
             "plan": "anonymous",
             "routing_mode": settings.free_routing_mode,
-            "cache_enabled": False,
+            "cache_enabled": settings.free_exact_cache,
+            "cache_exact_only": True,
+            "evolution_enabled": settings.evolution_enabled,
         }
 
     sub = get_billing().get_subscription(user_hash)
     plan = sub.get("plan", "free")
     is_paid = plan in ("pro", "business") and sub.get("status") == "active"
+    semantic_cache = is_paid and settings.pro_cache_enabled
     return {
         "plan": plan,
         "routing_mode": "smart" if is_paid else settings.free_routing_mode,
-        "cache_enabled": is_paid and settings.pro_cache_enabled,
+        "cache_enabled": semantic_cache or settings.free_exact_cache,
+        "cache_exact_only": not semantic_cache and settings.free_exact_cache,
+        "evolution_enabled": settings.evolution_enabled,
     }
 
 
@@ -301,14 +333,21 @@ async def routing_explain(request: Request):
         quality_threshold=quality_threshold,
         routing_mode=routing_mode,
     )
+    settings = get_settings()
+    if settings.evolution_enabled:
+        result = get_evolution().apply(result, available or None, routing_mode)
     spec = MODELS.get(result.recommended_model)
 
     return {
         "routing": {
             "task_type": result.task_type,
             "complexity": result.complexity,
+            "route_tier": result.route_tier,
+            "evolved": result.evolved,
             "recommended_model": result.recommended_model,
             "fallback_model": result.fallback_model,
+            "alternatives": result.alternatives,
+            "flags": result.flags,
             "confidence": result.confidence,
             "signals": result.signals,
             "estimated_input_tokens": result.estimated_tokens,
@@ -400,6 +439,13 @@ async def chat_completions(request: Request):
             quality_threshold=quality_threshold,
             routing_mode=routing_mode,
         )
+        if settings.evolution_enabled:
+            get_evolution().maybe_refresh(settings.evolution_refresh_every)
+            classification = get_evolution().apply(
+                classification,
+                available_providers or None,
+                routing_mode,
+            )
         model_key = classification.recommended_model
     else:
         model_key = requested_model
@@ -421,17 +467,35 @@ async def chat_completions(request: Request):
         confidence=classification.confidence if classification else 1.0,
     )
 
+    # ── Optimize messages / token budget ─────────────────────────────
+    opt_meta: dict = {}
+    exec_messages = messages
+    exec_max_tokens = max_tokens
+    if settings.optimizer_enabled and classification:
+        optimized = optimize_request(messages, classification, max_tokens)
+        exec_messages = optimized.messages
+        exec_max_tokens = optimized.max_tokens
+        opt_meta = optimized.meta
+
     # ── Cache lookup ──────────────────────────────────────────────────
     cache = get_cache()
+    cache_exact = features.get("cache_exact_only", False)
     if cache_enabled and not stream:
-        cached = cache.get(messages, model_key=model_key if pinned_model else None)
+        cached = cache.get(
+            exec_messages,
+            model_key=model_key if pinned_model else None,
+            exact_only=cache_exact,
+        )
         if cached:
             cached.pop("_tokenmesh_cached", None)
             cached["tokenmesh"] = {
                 "routed_model": model_key,
                 "task_type": classification.task_type if classification else "pinned",
                 "complexity": classification.complexity if classification else "pinned",
+                "route_tier": classification.route_tier if classification else None,
+                "evolved": classification.evolved if classification else False,
                 "signals": classification.signals if classification else [],
+                "optimizer": opt_meta,
                 "cache_hit": True,
                 "savings": {"saved_usd": 0, "savings_pct": 0, "note": "cache hit, no API call"},
             }
@@ -441,6 +505,9 @@ async def chat_completions(request: Request):
                 task_type=classification.task_type if classification else "pinned",
                 complexity=classification.complexity if classification else None,
                 confidence=classification.confidence if classification else None,
+                route_tier=classification.route_tier if classification else None,
+                evolved=classification.evolved if classification else False,
+                max_tokens_cap=exec_max_tokens,
                 cache_hit=True,
             ))
             return JSONResponse(content=cached, headers={
@@ -477,8 +544,8 @@ async def chat_completions(request: Request):
                 )
 
             response_data = await _client.chat_completion(
-                attempt_model, messages, attempt_key,
-                stream=False, max_tokens=max_tokens, temperature=temperature,
+                attempt_model, exec_messages, attempt_key,
+                stream=False, max_tokens=exec_max_tokens, temperature=temperature,
             )
             used_model_key = attempt_model
             break
@@ -512,14 +579,17 @@ async def chat_completions(request: Request):
         "routed_model": used_model_key,
         "task_type": classification.task_type if classification else "pinned",
         "complexity": classification.complexity if classification else "pinned",
+        "route_tier": classification.route_tier if classification else None,
+        "evolved": classification.evolved if classification else False,
         "signals": classification.signals if classification else [],
+        "optimizer": opt_meta,
         "savings": savings,
         "cache_hit": False,
     }
 
     # ── Store in cache ────────────────────────────────────────────────
     if cache_enabled:
-        cache.set(messages, response_data, used_model_key)
+        cache.set(exec_messages, response_data, used_model_key, exact_only=cache_exact)
 
     # ── Log usage ─────────────────────────────────────────────────────
     usage_rec = response_data.get("_tokenmesh_meta", {})
@@ -537,6 +607,9 @@ async def chat_completions(request: Request):
         saved_usd=savings["saved_usd"],
         savings_pct=savings["savings_pct"],
         latency_ms=usage_rec.get("latency_ms", 0),
+        route_tier=classification.route_tier if classification else None,
+        evolved=classification.evolved if classification else False,
+        max_tokens_cap=exec_max_tokens,
         cache_hit=False,
         stream=False,
     ))
@@ -545,6 +618,8 @@ async def chat_completions(request: Request):
         "X-Tokenmesh-Model":       used_model_key,
         "X-Tokenmesh-Savings-USD": str(savings["saved_usd"]),
         "X-Tokenmesh-Task-Type":   classification.task_type if classification else "pinned",
+        "X-Tokenmesh-Route-Tier":  classification.route_tier if classification else "",
+        "X-Tokenmesh-Evolved":     "1" if classification and classification.evolved else "0",
         "X-Tokenmesh-Cache":       "miss",
         "X-Tokenmesh-Plan":        features["plan"],
     }
@@ -584,6 +659,31 @@ async def _stream_response(
 
 
 # ── Usage / savings dashboard ─────────────────────────────────────────────────
+
+@app.get("/v1/evolution/status")
+async def evolution_status():
+    """Self-evolution flywheel state and projected savings."""
+    settings = get_settings()
+    if not settings.evolution_enabled:
+        return {"enabled": False}
+    engine = get_evolution()
+    return {
+        "enabled": True,
+        "optimizer_enabled": settings.optimizer_enabled,
+        **engine.status(),
+        "projection": engine.estimate_savings_vs_baseline(),
+    }
+
+
+@app.post("/v1/evolution/learn")
+async def evolution_learn():
+    """Force recomputation of learned routing policy from usage history."""
+    settings = get_settings()
+    if not settings.evolution_enabled:
+        raise HTTPException(status_code=400, detail="Evolution is disabled")
+    n = get_evolution().learn()
+    return {"policies_updated": n, **get_evolution().status()}
+
 
 @app.get("/v1/usage/summary")
 async def usage_summary(request: Request, days: int = 30):

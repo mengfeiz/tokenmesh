@@ -40,8 +40,17 @@ class Settings(BaseSettings):
     managed_markup_pct: float = 6.0     # PRD: 5–8% markup on API spend
 
     # Plan gating
-    free_routing_mode: str = "basic"    # basic routing for free tier
+    free_routing_mode: str = "smart"    # smart routing when evolution enabled
     pro_cache_enabled: bool = True      # semantic cache requires Pro+
+    free_exact_cache: bool = True       # exact-match cache for all users
+
+    # Self-evolution flywheel
+    evolution_enabled: bool = True
+    evolution_min_samples: int = 8
+    evolution_min_savings_pct: float = 50.0
+    evolution_lookback_days: int = 30
+    evolution_refresh_every: int = 50
+    optimizer_enabled: bool = True
 
     # Failover
     enable_failover: bool = True

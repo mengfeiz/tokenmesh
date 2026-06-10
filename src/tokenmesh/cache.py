@@ -109,11 +109,13 @@ class SemanticCache:
         ttl_seconds: float = 3600.0,
         similarity_threshold: float = 0.92,
         enabled: bool = True,
+        exact_only: bool = False,
     ):
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
         self.similarity_threshold = similarity_threshold
         self.enabled = enabled
+        self.exact_only = exact_only
         self._cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self._stats = {"hits": 0, "misses": 0, "evictions": 0, "embeddings": 0}
 
@@ -124,6 +126,7 @@ class SemanticCache:
         self,
         messages: list[dict],
         model_key: Optional[str] = None,
+        exact_only: Optional[bool] = None,
     ) -> Optional[dict]:
         """
         Look up a cached response.
@@ -133,6 +136,9 @@ class SemanticCache:
             return None
 
         text = _messages_to_text(messages)
+        if exact_only if exact_only is not None else self.exact_only:
+            return self._exact_get(text)
+
         query_embedding = _embed(text)
 
         if query_embedding is None:
@@ -201,18 +207,20 @@ class SemanticCache:
         messages: list[dict],
         response: dict,
         model_key: str,
+        exact_only: Optional[bool] = None,
     ) -> bool:
         """Store a response in the cache. Returns True if stored."""
         if not self.enabled:
             return False
 
         text = _messages_to_text(messages)
-        embedding = _embed(text)
         cache_key = self._make_key(text)
-
-        if embedding is None:
-            # Store without embedding (exact match only)
+        if exact_only if exact_only is not None else self.exact_only:
             embedding = [] if not _NUMPY_AVAILABLE else np.zeros(1)
+        else:
+            embedding = _embed(text)
+            if embedding is None:
+                embedding = [] if not _NUMPY_AVAILABLE else np.zeros(1)
 
         entry = CacheEntry(
             embedding=embedding,
@@ -242,6 +250,7 @@ class SemanticCache:
             "max_size": self.max_size,
             "hit_rate": round(hit_rate, 4),
             "enabled": self.enabled,
+            "exact_only": self.exact_only,
         }
 
     def clear(self) -> int:
@@ -267,6 +276,7 @@ def init_cache(
     ttl_seconds: float = 3600.0,
     similarity_threshold: float = 0.92,
     enabled: bool = True,
+    exact_only: bool = False,
 ) -> SemanticCache:
     global _cache
     _cache = SemanticCache(
@@ -274,5 +284,6 @@ def init_cache(
         ttl_seconds=ttl_seconds,
         similarity_threshold=similarity_threshold,
         enabled=enabled,
+        exact_only=exact_only,
     )
     return _cache

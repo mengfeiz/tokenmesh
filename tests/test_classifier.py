@@ -89,14 +89,14 @@ class TestModelSelection:
 
     def test_frontier_tier_override(self):
         r = classify(make_messages("Hello"), preferred_tier="frontier")
-        assert r.complexity == "high"
+        assert r.route_tier == "R3"
 
     def test_fast_tier_override(self):
         r = classify(make_messages(
             "Analyze the complete competitive landscape of AI infrastructure "
             "with deep tradeoffs"
         ), preferred_tier="fast")
-        assert r.complexity == "low"
+        assert r.route_tier == "R0"
 
 
 class TestProviderFiltering:
@@ -121,14 +121,44 @@ class TestProviderFiltering:
         assert r.recommended_model is not None
 
 
+class TestRouteTiers:
+    def test_greeting_is_r0(self):
+        r = classify(make_messages("你好"))
+        assert r.route_tier == "R0"
+        assert r.task_type == "simple_qa"
+
+    def test_debug_flag_escalates_to_r2(self):
+        r = classify(make_messages("这个报错怎么修？Traceback (most recent call last)"))
+        assert r.flags.get("debug")
+        assert r.route_tier in ("R2", "R3")
+
+    def test_deepseek_only_picks_different_models(self):
+        simple = classify(
+            make_messages("你好"),
+            available_providers={"deepseek"},
+        )
+        hard = classify(
+            make_messages(
+                "Prove that P != NP and analyze all known partial results step by step"
+            ),
+            available_providers={"deepseek"},
+        )
+        assert simple.recommended_model != hard.recommended_model or hard.route_tier > simple.route_tier
+
+    def test_chinese_coding_detected(self):
+        r = classify(make_messages("用 Python 写一个快速排序函数"))
+        assert r.task_type == "coding"
+
+
 class TestQualityAndRoutingMode:
-    def test_basic_routing_mode_uses_cheap_default(self):
+    def test_basic_routing_mode_uses_cheap_available(self):
         r = classify(
             make_messages("Prove P != NP with full analysis and tradeoffs"),
             routing_mode="basic",
+            available_providers={"deepseek"},
         )
         assert "routing_mode:basic" in r.signals
-        assert r.recommended_model == "deepseek/deepseek-chat"
+        assert r.recommended_model.startswith("deepseek/")
 
     def test_quality_threshold_low_forces_simple_routing(self):
         r = classify(

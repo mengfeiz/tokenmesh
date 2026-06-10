@@ -79,6 +79,9 @@ class UsageRecord:
     cache_hit: bool = False
     stream: bool = False
     error: Optional[str] = None
+    route_tier: Optional[str] = None
+    evolved: bool = False
+    max_tokens_cap: Optional[int] = None
 
     def __post_init__(self):
         if self.ts == 0.0:
@@ -97,7 +100,18 @@ class UsageLogger:
     def _init_db(self):
         with self._connect() as conn:
             conn.executescript(_DDL)
+            self._migrate_schema(conn)
         log.info("tokenmesh.usage.db_init", path=str(self.db_path))
+
+    def _migrate_schema(self, conn: sqlite3.Connection):
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(requests)")}
+        for col, typedef in (
+            ("route_tier", "TEXT"),
+            ("evolved", "INTEGER DEFAULT 0"),
+            ("max_tokens_cap", "INTEGER"),
+        ):
+            if col not in cols:
+                conn.execute(f"ALTER TABLE requests ADD COLUMN {col} {typedef}")
 
     @contextmanager
     def _connect(self):
@@ -166,16 +180,17 @@ class UsageLogger:
                 r.actual_cost, r.baseline_cost,
                 r.saved_usd, r.savings_pct,
                 r.latency_ms, int(r.cache_hit), int(r.stream),
-                r.error,
+                r.error, r.route_tier, int(r.evolved), r.max_tokens_cap,
             ))
         with self._connect() as conn:
+            self._migrate_schema(conn)
             conn.executemany(
                 """INSERT INTO requests
                    (ts, user_hash, model_key, provider, task_type, complexity,
                     confidence, input_tokens, output_tokens, actual_cost,
                     baseline_cost, saved_usd, savings_pct, latency_ms,
-                    cache_hit, stream, error)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    cache_hit, stream, error, route_tier, evolved, max_tokens_cap)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 rows,
             )
 

@@ -10,6 +10,117 @@ Your app → Tokenmesh → DeepSeek / Qwen / GPT-4o / Claude / Gemini
                   ↑ picks the cheapest model that can do the job
 ```
 
+## 30 秒试用（不需要任何 LLM API Key）
+
+```bash
+# 1. 安装并启动
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -e .
+tokenmesh   # 另开终端继续
+
+# 2. 一键冒烟测试
+chmod +x scripts/try.sh && ./scripts/try.sh
+
+# 或手动：只看路由决策（不调用 LLM，零成本）
+curl -s http://localhost:8080/v1/routing/explain \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"写一个 Python 快排"}]}' | python3 -m json.tool
+```
+
+浏览器打开 **http://localhost:8080/** 使用 Web 试用页（路由分析 / 对话 / 用量 / 注册）。
+
+API 文档：http://localhost:8080/docs
+
+## 一键接入 Tokenmesh
+
+**把 OpenAI SDK 的 `base_url` 换成 Tokenmesh，`model` 写成 `auto` 即可。** 其余代码不用改。
+
+### 1. 环境变量（推荐）
+
+```bash
+export TOKENMESH_BASE_URL=http://localhost:8080/v1
+export DEEPSEEK_API_KEY=sk-...          # 至少一个供应商 Key（BYOK）
+# 可选: OPENAI_API_KEY, QWEN_API_KEY, GOOGLE_API_KEY, ...
+```
+
+### 2. Python（3 行）
+
+```python
+from openai import OpenAI
+import os
+
+client = OpenAI(
+    base_url=os.getenv("TOKENMESH_BASE_URL", "http://localhost:8080/v1"),
+    api_key="not-used",
+    default_headers={"X-DeepSeek-API-Key": os.environ["DEEPSEEK_API_KEY"]},
+)
+
+r = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "用 Python 写快排"}],
+)
+print(r.choices[0].message.content)
+```
+
+### 3. curl（一条命令）
+
+```bash
+DEEPSEEK_API_KEY=sk-... ./scripts/chat.sh "用 Python 写快排"
+```
+
+或手写：
+
+```bash
+curl -s http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "X-DeepSeek-API-Key: $DEEPSEEK_API_KEY" \
+  -d '{"model":"auto","messages":[{"role":"user","content":"你好"}]}'
+```
+
+### 4. Cursor / Claude Agent Skill
+
+仓库自带 Skill，教 Agent 自动走 Tokenmesh：
+
+```text
+.cursor/skills/tokenmesh/SKILL.md
+```
+
+在 Cursor 中打开本项目即可被 Agent 发现；或复制到 `~/.cursor/skills/tokenmesh/` 全局使用。
+
+### 5. 最小 API 表
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/v1/chat/completions` | **主接口**，与 OpenAI 完全兼容，`model=auto` |
+| `POST` | `/v1/routing/explain` | 只看路由决策，**不调用 LLM、不花钱** |
+| `GET` | `/v1/evolution/status` | 自我进化策略与预期节省 |
+| `GET` | `/v1/usage/summary` | 用量与省钱统计 |
+| `GET` | `/v1/models` | 支持的模型列表 |
+| `GET` | `/health` | 健康检查 |
+
+### 6. 响应里的 Tokenmesh 元数据
+
+每次 `chat/completions` 响应会附带：
+
+```json
+{
+  "tokenmesh": {
+    "routed_model": "deepseek/deepseek-chat",
+    "task_type": "coding",
+    "route_tier": "R1",
+    "evolved": false,
+    "savings": {
+      "actual_cost_usd": 0.000002,
+      "baseline_cost_usd": 0.000042,
+      "saved_usd": 0.000040,
+      "savings_pct": 94.5
+    }
+  }
+}
+```
+
+响应 Header：`X-Tokenmesh-Model`、`X-Tokenmesh-Savings-USD`、`X-Tokenmesh-Route-Tier`。
+
 ## Quickstart
 
 ```bash
@@ -201,11 +312,11 @@ Pass `X-Tokenmesh-Project: proj_xxx` on requests to apply project routing rules.
 
 ## Plans (PRD-aligned)
 
-| Tier | Price | Routing | Semantic cache |
-|------|-------|---------|----------------|
-| Free | $0 | Basic | No |
-| Pro | $9/mo | Smart task routing | Yes |
-| Business | $79/mo | Smart + teams/SSO (roadmap) | Yes |
+| Tier | Price | Routing | Cache |
+|------|-------|---------|-------|
+| Free | $0 | Smart + 自我进化 | 精确匹配缓存 |
+| Pro | $9/mo | Smart + 自我进化 | 语义缓存 |
+| Business | $79/mo | Smart + teams/SSO (roadmap) | 语义缓存 |
 
 Upgrade via `POST /v1/billing/checkout`. Savings dashboard: `GET /v1/usage/summary`.
 
@@ -229,6 +340,8 @@ docker compose up --build
 - [x] Per-project routing config
 - [x] Semantic cache (in-memory; optional embeddings)
 - [x] Docker Compose setup
-- [ ] ML classifier v2 (train on routing data)
+- [x] Self-evolution flywheel (usage → learned tier downgrade)
+- [x] Token optimizer (tier max_tokens + context trim)
+- [ ] ML classifier v3 (train on routing data)
 - [ ] Managed mode billing (5–8% markup)
 - [ ] Redis-backed semantic cache
