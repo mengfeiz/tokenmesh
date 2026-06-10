@@ -9,3 +9,6 @@ venv/
 .pytest_cache/
 .coverage
 htmlcov/
+node_modules/
+.next/
+.env.local

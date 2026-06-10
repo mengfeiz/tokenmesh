@@ -13,6 +13,7 @@ if [ -z "${DEEPSEEK_API_KEY:-}" ] && [ -z "${OPENAI_API_KEY:-}" ]; then
 fi
 
 HEADERS=(-H "Content-Type: application/json")
+[ -n "${TOKENMESH_API_KEY:-}" ] && HEADERS+=(-H "Authorization: Bearer $TOKENMESH_API_KEY")
 [ -n "${DEEPSEEK_API_KEY:-}" ] && HEADERS+=(-H "X-DeepSeek-API-Key: $DEEPSEEK_API_KEY")
 [ -n "${OPENAI_API_KEY:-}" ]   && HEADERS+=(-H "X-OpenAI-API-Key: $OPENAI_API_KEY")
 [ -n "${QWEN_API_KEY:-}" ]     && HEADERS+=(-H "X-Qwen-API-Key: $QWEN_API_KEY")

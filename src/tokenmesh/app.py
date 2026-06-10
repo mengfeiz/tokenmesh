@@ -186,12 +186,31 @@ async def auth_register(request: Request):
 
 @app.post("/v1/auth/login")
 async def auth_login(request: Request):
-    """Login and list existing API key prefixes."""
+    """Login and list existing API key prefixes. Set create_new_key=true to mint a key."""
     body = await request.json()
     return get_auth().login(
         email=body.get("email", ""),
         password=body.get("password", ""),
+        create_new_key=bool(body.get("create_new_key")),
     )
+
+
+@app.get("/v1/me")
+async def current_user(request: Request):
+    """Current developer identity (requires Tokenmesh API key)."""
+    user = require_user(request)
+    user_hash = resolve_user_hash(request)
+    features = _plan_features(user_hash)
+    raw_key = extract_tokenmesh_key(request)
+    base = str(request.base_url).rstrip("/")
+    return {
+        "user": {"id": user.id, "email": user.email},
+        "plan": features["plan"],
+        "api_base": base + "/v1",
+        "dashboard_url": base + "/",
+        "key_prefix": (raw_key[:20] + "…") if raw_key else None,
+        "features": features,
+    }
 
 
 @app.post("/v1/auth/keys")

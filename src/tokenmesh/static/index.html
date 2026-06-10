@@ -3,183 +3,112 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tokenmesh — 智能路由网关</title>
+  <title>Tokenmesh — 开发者控制台</title>
   <style>
     :root {
-      --bg: #0f1117;
-      --surface: #181b24;
-      --border: #2a3040;
-      --text: #e8ecf4;
-      --muted: #8b95a8;
-      --accent: #5b8def;
-      --accent-dim: #3d5fa8;
-      --ok: #3ecf8e;
-      --warn: #f0b429;
+      --bg: #0f1117; --surface: #181b24; --border: #2a3040;
+      --text: #e8ecf4; --muted: #8b95a8; --accent: #5b8def;
+      --accent-dim: #3d5fa8; --ok: #3ecf8e; --warn: #f0b429;
       --radius: 10px;
       --font: "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
       --mono: "SF Mono", "Menlo", "Consolas", monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      line-height: 1.5;
-    }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
     header {
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border); padding: 1rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
     }
-    .logo { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; }
+    .logo { font-size: 1.25rem; font-weight: 600; }
     .logo span { color: var(--accent); }
     .tagline { color: var(--muted); font-size: 0.85rem; }
-    .status-pill {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.6rem;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
+    .status-pill { font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
     .status-pill.ok { border-color: var(--ok); color: var(--ok); }
-    main {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 1.5rem;
-    }
-    .tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-      flex-wrap: wrap;
-    }
+    .user-badge { font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }
+    main { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
     .tab {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-size: 0.9rem;
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      padding: 0.5rem 1rem; border-radius: var(--radius); cursor: pointer; font-size: 0.9rem;
     }
-    .tab.active {
-      color: var(--text);
-      border-color: var(--accent);
-      background: #1e2433;
-    }
-    .panel { display: none; }
-    .panel.active { display: block; }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-    }
+    .tab.active { color: var(--text); border-color: var(--accent); background: #1e2433; }
+    .panel { display: none; } .panel.active { display: block; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
     .card h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+    .card h3 { font-size: 0.9rem; margin: 1rem 0 0.5rem; color: var(--muted); font-weight: 500; }
     label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
     textarea, input, select {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      padding: 0.65rem 0.75rem;
-      font-family: inherit;
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
+      width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); padding: 0.65rem 0.75rem; font-family: inherit; font-size: 0.9rem; margin-bottom: 0.75rem;
     }
-    textarea { min-height: 120px; resize: vertical; }
+    textarea { min-height: 100px; resize: vertical; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
     button {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 0.6rem 1.2rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 0.6rem 1.2rem; font-size: 0.9rem; font-weight: 500; cursor: pointer;
     }
     button:hover { background: var(--accent-dim); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-    button.secondary {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
+    button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    button.small { padding: 0.35rem 0.7rem; font-size: 0.75rem; }
     .result {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      font-family: var(--mono);
-      font-size: 0.8rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 320px;
-      overflow: auto;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem; font-family: var(--mono); font-size: 0.78rem;
+      white-space: pre-wrap; word-break: break-word; max-height: 360px; overflow: auto;
     }
+    .code-wrap { position: relative; margin-bottom: 0.75rem; }
+    .code-wrap .copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; }
     .model-badge {
-      display: inline-block;
-      background: #243049;
-      color: var(--accent);
-      padding: 0.2rem 0.55rem;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-family: var(--mono);
-      margin: 0.25rem 0;
+      display: inline-block; background: #243049; color: var(--accent);
+      padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.85rem; font-family: var(--mono);
     }
     .meta { color: var(--muted); font-size: 0.8rem; margin-top: 0.5rem; }
-    .chat-log {
-      min-height: 200px;
-      max-height: 360px;
-      overflow-y: auto;
-      margin-bottom: 0.75rem;
+    .steps { display: grid; gap: 1rem; }
+    .step {
+      display: grid; grid-template-columns: 2rem 1fr; gap: 0.75rem; align-items: start;
     }
-    .msg {
-      padding: 0.6rem 0.75rem;
-      border-radius: 8px;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
+    .step-num {
+      width: 2rem; height: 2rem; border-radius: 50%; background: var(--accent);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.9rem;
     }
+    .cred-box {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.75rem; font-family: var(--mono); font-size: 0.8rem;
+    }
+    .cred-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+    .cred-row:last-child { margin-bottom: 0; }
+    .cred-val { color: var(--ok); word-break: break-all; }
+    .code-tabs { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+    .code-tab { padding: 0.3rem 0.65rem; font-size: 0.75rem; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--muted); }
+    .code-tab.active { border-color: var(--accent); color: var(--text); }
+    .hero-savings {
+      background: linear-gradient(135deg, #1a2744 0%, #181b24 100%);
+      border: 1px solid var(--accent-dim); border-radius: var(--radius);
+      padding: 1.5rem; margin-bottom: 1rem; text-align: center;
+    }
+    .hero-savings .big { font-size: 2.5rem; font-weight: 700; color: var(--ok); }
+    .hero-savings .sub { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.75rem; }
+    .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }
+    .stat .val { font-size: 1.2rem; font-weight: 600; color: var(--ok); }
+    .stat .lbl { font-size: 0.72rem; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.75rem; }
+    th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; }
+    .chat-log { min-height: 180px; max-height: 320px; overflow-y: auto; margin-bottom: 0.75rem; }
+    .msg { padding: 0.6rem 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.9rem; }
     .msg.user { background: #1e2a42; margin-left: 2rem; }
     .msg.assistant { background: #1a1f2e; margin-right: 2rem; border-left: 3px solid var(--accent); }
     .msg .role { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; margin-bottom: 0.2rem; }
-    .keys-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.5rem;
-    }
+    .keys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; }
     .keys-grid input { margin-bottom: 0; font-size: 0.8rem; }
-    details { margin-bottom: 0.75rem; }
     details summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 0.75rem;
-    }
-    .stat {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.75rem;
-    }
-    .stat .val { font-size: 1.25rem; font-weight: 600; color: var(--ok); }
-    .stat .lbl { font-size: 0.75rem; color: var(--muted); }
     .error { color: #f87171; font-size: 0.85rem; margin-top: 0.5rem; }
-    footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.75rem;
-      padding: 2rem 1rem;
-    }
+    .ok-msg { color: var(--ok); font-size: 0.85rem; margin-top: 0.5rem; }
+    .hidden { display: none !important; }
+    footer { text-align: center; color: var(--muted); font-size: 0.75rem; padding: 2rem 1rem; }
     footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
@@ -187,134 +116,213 @@
   <header>
     <div>
       <div class="logo">Token<span>mesh</span></div>
-      <div class="tagline">按任务自动选模型，BYOK 省钱网关</div>
+      <div class="tagline">OpenAI 兼容 · 每人一个 API Key · 自动省钱</div>
     </div>
-    <div id="health" class="status-pill">检查中…</div>
+    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+      <div id="user-badge" class="user-badge hidden"></div>
+      <div id="health" class="status-pill">检查中…</div>
+    </div>
   </header>
 
   <main>
     <div class="tabs">
-      <button class="tab active" data-tab="route">路由分析</button>
+      <button class="tab active" data-tab="start">快速开始</button>
+      <button class="tab" data-tab="dashboard">省钱看板</button>
+      <button class="tab" data-tab="route">路由分析</button>
       <button class="tab" data-tab="chat">对话试用</button>
-      <button class="tab" data-tab="usage">用量统计</button>
-      <button class="tab" data-tab="account">账号</button>
     </div>
 
-    <!-- 路由分析：不需要 API Key -->
-    <section id="panel-route" class="panel active">
+    <!-- 快速开始 -->
+    <section id="panel-start" class="panel active">
       <div class="card">
-        <h2>看 Tokenmesh 会选哪个模型</h2>
-        <p class="meta" style="margin-bottom:0.75rem">不调用 LLM，零成本。适合先感受路由逻辑。</p>
-        <label for="route-prompt">你的提示词</label>
-        <textarea id="route-prompt" placeholder="例如：写一个 Python 快排，并解释时间复杂度">写一个 Python 快排，并解释时间复杂度</textarea>
+        <h2>开发者 3 步接入</h2>
+        <p class="meta" style="margin-bottom:1rem">注册拿专属 <code>tm_live_</code> Key → 复制代码 → 调用 <code>model: auto</code>。LLM 费用仍走你自己的供应商 Key（BYOK）。</p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div>
+              <strong>获取 Tokenmesh API Key</strong>
+              <div id="auth-form">
+                <div class="row" style="margin-top:0.5rem">
+                  <div><label>邮箱</label><input id="acc-email" type="email" placeholder="you@company.com" /></div>
+                  <div><label>密码</label><input id="acc-password" type="password" placeholder="至少 8 位" /></div>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.25rem">
+                  <button id="btn-register">注册并获取 Key</button>
+                  <button class="secondary" id="btn-login" type="button">登录</button>
+                  <label style="display:flex;align-items:center;gap:0.35rem;margin:0;font-size:0.8rem">
+                    <input type="checkbox" id="login-new-key" style="width:auto;margin:0" /> 登录时生成新 Key
+                  </label>
+                </div>
+                <details style="margin-top:0.5rem">
+                  <summary>已有 tm_live_ Key？直接粘贴</summary>
+                  <div class="row" style="margin-top:0.5rem">
+                    <input id="paste-key" type="text" placeholder="tm_live_..." style="margin-bottom:0" />
+                    <button class="secondary" id="btn-save-key" type="button" style="height:2.5rem">保存 Key</button>
+                  </div>
+                </details>
+                <div id="acc-error" class="error"></div>
+                <div id="acc-success" class="ok-msg"></div>
+              </div>
+              <div id="auth-done" class="hidden" style="margin-top:0.5rem">
+                <span class="ok-msg">已登录 · </span><span id="auth-email" class="meta"></span>
+                <button class="secondary small" id="btn-new-key" type="button" style="margin-left:0.5rem">生成新 Key</button>
+                <button class="secondary small" id="btn-logout" type="button">退出</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">2</div>
+            <div>
+              <strong>你的接入凭证</strong>
+              <div class="cred-box" style="margin-top:0.5rem">
+                <div class="cred-row">
+                  <span>TOKENMESH_API_KEY</span>
+                  <button class="secondary small copy-btn" data-copy="tm-key-display">复制</button>
+                </div>
+                <div class="cred-val" id="tm-key-display">（请先注册）</div>
+                <div class="cred-row" style="margin-top:0.75rem">
+                  <span>BASE_URL</span>
+                  <button class="secondary small copy-btn" data-copy="base-url-display">复制</button>
+                </div>
+                <div class="cred-val" id="base-url-display"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">3</div>
+            <div>
+              <strong>复制代码，一键调用</strong>
+              <div class="code-tabs" style="margin-top:0.5rem">
+                <span class="code-tab active" data-lang="python">Python</span>
+                <span class="code-tab" data-lang="curl">curl</span>
+                <span class="code-tab" data-lang="node">Node.js</span>
+              </div>
+              <div class="code-wrap">
+                <button class="secondary small copy-btn" id="btn-copy-code">复制代码</button>
+                <pre class="result" id="code-snippet" style="max-height:280px"></pre>
+              </div>
+              <p class="meta">请求头加 <code>Authorization: Bearer tm_live_…</code>，Body 里 <code>"model":"auto"</code>。另需 BYOK：<code>X-DeepSeek-API-Key</code> 等。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 省钱看板 -->
+    <section id="panel-dashboard" class="panel">
+      <div id="dash-no-key" class="card">
+        <h2>省钱看板</h2>
+        <p class="meta">请先在「快速开始」注册并保存 API Key，才能看到<strong>你的</strong>节省统计。</p>
+        <button class="secondary" data-goto="start">去获取 Key</button>
+      </div>
+      <div id="dash-content" class="hidden">
+        <div class="hero-savings">
+          <div class="sub">近 30 天累计节省（相对 GPT-4o 基准）</div>
+          <div class="big" id="hero-saved">$0.00</div>
+          <div class="sub" id="hero-pct">平均节省 0%</div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+            <h2>用量概览</h2>
+            <button id="btn-dashboard-refresh" class="small">刷新</button>
+          </div>
+          <div id="dash-error" class="error"></div>
+          <div id="usage-stats" class="stats-grid" style="margin-top:0.75rem"></div>
+          <h3>按模型分布</h3>
+          <div id="model-table-wrap"></div>
+          <h3>最近请求</h3>
+          <div id="recent-table-wrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 路由分析 -->
+    <section id="panel-route" class="panel">
+      <div class="card">
+        <h2>路由分析（零成本）</h2>
+        <label for="route-prompt">提示词</label>
+        <textarea id="route-prompt">写一个 Python 快排，并解释时间复杂度</textarea>
         <div class="row">
           <div>
             <label for="route-tier">偏好档位</label>
             <select id="route-tier">
               <option value="">自动</option>
-              <option value="fast">fast — 便宜快</option>
-              <option value="balanced">balanced — 均衡</option>
-              <option value="frontier">frontier — 最强</option>
+              <option value="fast">fast</option>
+              <option value="balanced">balanced</option>
+              <option value="frontier">frontier</option>
             </select>
           </div>
         </div>
         <button id="btn-route">分析路由</button>
         <div id="route-error" class="error"></div>
         <div id="route-result" style="margin-top:1rem;display:none">
-          <div>推荐模型：<span class="model-badge" id="route-model"></span></div>
+          <div>推荐：<span class="model-badge" id="route-model"></span></div>
           <div class="meta" id="route-meta"></div>
           <pre class="result" id="route-json" style="margin-top:0.75rem"></pre>
         </div>
       </div>
     </section>
 
-    <!-- 对话 -->
+    <!-- 对话试用 -->
     <section id="panel-chat" class="panel">
       <div class="card">
-        <h2>发一条真实请求</h2>
-        <p class="meta" style="margin-bottom:0.75rem">需要至少填一个供应商 API Key（BYOK）。Key 只存在浏览器本地。</p>
+        <h2>对话试用</h2>
+        <p class="meta" style="margin-bottom:0.75rem">需要 Tokenmesh Key + 至少一个供应商 Key（BYOK）。</p>
         <div class="chat-log" id="chat-log"></div>
-        <label for="chat-input">消息</label>
-        <textarea id="chat-input" rows="3" placeholder="输入消息后发送"></textarea>
-        <div class="row">
-          <div>
-            <label for="chat-model">模型</label>
-            <select id="chat-model"><option value="auto">auto（智能路由）</option></select>
-          </div>
-          <div>
-            <label for="tm-key">Tokenmesh Key（可选）</label>
-            <input id="tm-key" type="password" placeholder="tm_live_…" autocomplete="off" />
-          </div>
-        </div>
-        <details>
-          <summary>供应商 API Key（BYOK，至少填一个）</summary>
+        <textarea id="chat-input" rows="2" placeholder="输入消息"></textarea>
+        <select id="chat-model"><option value="auto">auto（智能路由）</option></select>
+        <details style="margin-top:0.5rem">
+          <summary>供应商 API Key（BYOK）</summary>
           <div class="keys-grid" style="margin-top:0.5rem">
-            <div><label>OpenAI</label><input data-provider="openai" type="password" placeholder="sk-…" /></div>
             <div><label>DeepSeek</label><input data-provider="deepseek" type="password" placeholder="sk-…" /></div>
-            <div><label>Anthropic</label><input data-provider="anthropic" type="password" placeholder="sk-ant-…" /></div>
-            <div><label>Google</label><input data-provider="google" type="password" /></div>
+            <div><label>OpenAI</label><input data-provider="openai" type="password" placeholder="sk-…" /></div>
+            <div><label>Anthropic</label><input data-provider="anthropic" type="password" /></div>
             <div><label>Qwen</label><input data-provider="qwen" type="password" /></div>
-            <div><label>Moonshot</label><input data-provider="moonshot" type="password" /></div>
-            <div><label>Mistral</label><input data-provider="mistral" type="password" /></div>
+            <div><label>Google</label><input data-provider="google" type="password" /></div>
           </div>
         </details>
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
           <button id="btn-chat">发送</button>
-          <button class="secondary" id="btn-chat-clear" type="button">清空对话</button>
+          <button class="secondary" id="btn-chat-clear" type="button">清空</button>
         </div>
         <div id="chat-error" class="error"></div>
-      </div>
-    </section>
-
-    <!-- 用量 -->
-    <section id="panel-usage" class="panel">
-      <div class="card">
-        <h2>省钱与用量</h2>
-        <p class="meta" style="margin-bottom:0.75rem">绑定 Tokenmesh Key 后查看你的统计。</p>
-        <button id="btn-usage">刷新统计</button>
-        <div id="usage-error" class="error"></div>
-        <div id="usage-stats" class="stats-grid" style="margin-top:1rem"></div>
-        <pre class="result" id="usage-json" style="margin-top:0.75rem;display:none"></pre>
-      </div>
-    </section>
-
-    <!-- 账号 -->
-    <section id="panel-account" class="panel">
-      <div class="card">
-        <h2>注册 / 登录</h2>
-        <div class="row">
-          <div>
-            <label for="acc-email">邮箱</label>
-            <input id="acc-email" type="email" placeholder="you@example.com" />
-          </div>
-          <div>
-            <label for="acc-password">密码</label>
-            <input id="acc-password" type="password" placeholder="至少 8 位" />
-          </div>
-        </div>
-        <div style="display:flex;gap:0.5rem">
-          <button id="btn-register">注册并获取 API Key</button>
-          <button class="secondary" id="btn-login" type="button">登录</button>
-        </div>
-        <div id="acc-error" class="error"></div>
-        <div id="acc-success" class="meta" style="color:var(--ok);margin-top:0.5rem"></div>
-        <p class="meta" style="margin-top:1rem">当前保存的 Key：<code id="saved-key">（无）</code></p>
-        <button class="secondary" id="btn-clear-key" type="button" style="margin-top:0.5rem">清除本地 Key</button>
       </div>
     </section>
   </main>
 
   <footer>
-    OpenAI 兼容 API · <a href="/docs" target="_blank">Swagger 文档</a> ·
-    base_url = <code id="base-url"></code>
+    <a href="/docs" target="_blank">API 文档</a> ·
+    <a href="https://github.com/mengfeiz/tokenmesh" target="_blank">GitHub</a>
   </footer>
 
   <script>
     const API = window.location.origin;
+    const API_V1 = API + "/v1";
     const LS_TM = "tokenmesh_api_key";
+    const LS_EMAIL = "tokenmesh_email";
     const LS_KEYS = "tokenmesh_provider_keys";
 
     const $ = (id) => document.getElementById(id);
+    let currentLang = "python";
+    let chatMessages = [];
+
+    const PROVIDER_HEADER = {
+      openai: "OpenAI", anthropic: "Anthropic", deepseek: "DeepSeek",
+      qwen: "Qwen", google: "Google", moonshot: "Moonshot", mistral: "Mistral",
+    };
+
+    function getTmKey() { return localStorage.getItem(LS_TM) || ""; }
+
+    function authHeaders() {
+      const h = { "Content-Type": "application/json" };
+      const key = getTmKey();
+      if (key) h["Authorization"] = "Bearer " + key;
+      return h;
+    }
 
     function providerHeaders() {
       const h = {};
@@ -326,40 +334,8 @@
       return h;
     }
 
-    const PROVIDER_HEADER = {
-      openai: "OpenAI", anthropic: "Anthropic", deepseek: "DeepSeek",
-      qwen: "Qwen", google: "Google", moonshot: "Moonshot", mistral: "Mistral",
-    };
-
-    function authHeaders() {
-      const key = $("tm-key").value.trim() || localStorage.getItem(LS_TM) || "";
-      const h = { "Content-Type": "application/json" };
-      if (key) h["Authorization"] = "Bearer " + key;
-      return h;
-    }
-
     function mergeHeaders(extra) {
       return { ...authHeaders(), ...providerHeaders(), ...extra };
-    }
-
-    function saveKeys() {
-      const obj = {};
-      document.querySelectorAll("[data-provider]").forEach((el) => {
-        if (el.value.trim()) obj[el.dataset.provider] = el.value.trim();
-      });
-      localStorage.setItem(LS_KEYS, JSON.stringify(obj));
-    }
-
-    function loadKeys() {
-      const obj = JSON.parse(localStorage.getItem(LS_KEYS) || "{}");
-      document.querySelectorAll("[data-provider]").forEach((el) => {
-        if (obj[el.dataset.provider]) el.value = obj[el.dataset.provider];
-      });
-      const tm = localStorage.getItem(LS_TM);
-      if (tm) {
-        $("tm-key").value = tm;
-        $("saved-key").textContent = tm.slice(0, 12) + "…";
-      }
     }
 
     async function api(path, opts = {}) {
@@ -374,6 +350,111 @@
       return data;
     }
 
+    function saveProviderKeys() {
+      const obj = {};
+      document.querySelectorAll("[data-provider]").forEach((el) => {
+        if (el.value.trim()) obj[el.dataset.provider] = el.value.trim();
+      });
+      localStorage.setItem(LS_KEYS, JSON.stringify(obj));
+    }
+
+    function loadProviderKeys() {
+      const obj = JSON.parse(localStorage.getItem(LS_KEYS) || "{}");
+      document.querySelectorAll("[data-provider]").forEach((el) => {
+        if (obj[el.dataset.provider]) el.value = obj[el.dataset.provider];
+      });
+    }
+
+    function setTmKey(key, email) {
+      if (key) localStorage.setItem(LS_TM, key);
+      if (email) localStorage.setItem(LS_EMAIL, email);
+      updateAuthUI();
+      renderCodeSnippet();
+    }
+
+    function clearTmKey() {
+      localStorage.removeItem(LS_TM);
+      localStorage.removeItem(LS_EMAIL);
+      localStorage.removeItem(LS_KEYS);
+      updateAuthUI();
+      renderCodeSnippet();
+    }
+
+    function updateAuthUI() {
+      const key = getTmKey();
+      const email = localStorage.getItem(LS_EMAIL) || "";
+      if (key) {
+        $("auth-form").classList.add("hidden");
+        $("auth-done").classList.remove("hidden");
+        $("auth-email").textContent = email || key.slice(0, 20) + "…";
+        $("user-badge").textContent = email ? email.split("@")[0] : "dev";
+        $("user-badge").classList.remove("hidden");
+        $("tm-key-display").textContent = key;
+        $("dash-no-key").classList.add("hidden");
+        $("dash-content").classList.remove("hidden");
+      } else {
+        $("auth-form").classList.remove("hidden");
+        $("auth-done").classList.add("hidden");
+        $("user-badge").classList.add("hidden");
+        $("tm-key-display").textContent = "（请先注册）";
+        $("dash-no-key").classList.remove("hidden");
+        $("dash-content").classList.add("hidden");
+      }
+      $("base-url-display").textContent = API_V1;
+    }
+
+    function snippets(key) {
+      const k = key || "tm_live_YOUR_KEY_HERE";
+      return {
+        python: `import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="${API_V1}",
+    api_key="${k}",
+    default_headers={
+        "X-DeepSeek-API-Key": os.environ["DEEPSEEK_API_KEY"],
+    },
+)
+
+resp = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "用 Python 写快排"}],
+)
+print(resp.choices[0].message.content)
+# 省钱信息: resp 的 tokenmesh 字段`,
+        curl: `curl -s ${API_V1}/chat/completions \\
+  -H "Authorization: Bearer ${k}" \\
+  -H "Content-Type: application/json" \\
+  -H "X-DeepSeek-API-Key: $DEEPSEEK_API_KEY" \\
+  -d '{"model":"auto","messages":[{"role":"user","content":"你好"}]}'`,
+        node: `import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "${API_V1}",
+  apiKey: "${k}",
+  defaultHeaders: {
+    "X-DeepSeek-API-Key": process.env.DEEPSEEK_API_KEY,
+  },
+});
+
+const resp = await client.chat.completions.create({
+  model: "auto",
+  messages: [{ role: "user", content: "用 Python 写快排" }],
+});
+console.log(resp.choices[0].message.content);`,
+      };
+    }
+
+    function renderCodeSnippet() {
+      const s = snippets(getTmKey());
+      $("code-snippet").textContent = s[currentLang];
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+
     // Tabs
     document.querySelectorAll(".tab").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -381,22 +462,48 @@
         document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
         btn.classList.add("active");
         $("panel-" + btn.dataset.tab).classList.add("active");
+        if (btn.dataset.tab === "dashboard" && getTmKey()) loadDashboard();
       });
     });
 
-    // Health
+    document.querySelectorAll("[data-goto]").forEach((el) => {
+      el.addEventListener("click", () => {
+        document.querySelector(`.tab[data-tab="${el.dataset.goto}"]`).click();
+      });
+    });
+
+    document.querySelectorAll(".code-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".code-tab").forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+        currentLang = tab.dataset.lang;
+        renderCodeSnippet();
+      });
+    });
+
+    document.querySelectorAll(".copy-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.copy;
+        copyText($(id).textContent);
+        btn.textContent = "已复制";
+        setTimeout(() => { btn.textContent = "复制"; }, 1500);
+      });
+    });
+
+    $("btn-copy-code").addEventListener("click", () => {
+      copyText($("code-snippet").textContent);
+      $("btn-copy-code").textContent = "已复制";
+      setTimeout(() => { $("btn-copy-code").textContent = "复制代码"; }, 1500);
+    });
+
     async function checkHealth() {
       try {
         const h = await api("/health");
-        const el = $("health");
-        el.textContent = h.service + " v" + h.version + " · 在线";
-        el.classList.add("ok");
-      } catch {
-        $("health").textContent = "服务离线";
-      }
+        $("health").textContent = h.service + " v" + h.version;
+        $("health").classList.add("ok");
+      } catch { $("health").textContent = "离线"; }
     }
 
-    // Models list
     async function loadModels() {
       try {
         const data = await api("/v1/models");
@@ -404,126 +511,12 @@
         (data.data || []).forEach((m) => {
           const o = document.createElement("option");
           o.value = m.id;
-          o.textContent = m.id + " (" + (m.tier || "") + ")";
+          o.textContent = m.id;
           sel.appendChild(o);
         });
       } catch (_) {}
     }
 
-    // Route explain
-    $("btn-route").addEventListener("click", async () => {
-      $("route-error").textContent = "";
-      $("btn-route").disabled = true;
-      try {
-        const tier = $("route-tier").value;
-        const body = {
-          messages: [{ role: "user", content: $("route-prompt").value.trim() }],
-        };
-        if (tier) body.x_tokenmesh_tier = tier;
-        const data = await api("/v1/routing/explain", {
-          method: "POST",
-          headers: mergeHeaders(),
-          body: JSON.stringify(body),
-        });
-        const r = data.routing;
-        $("route-model").textContent = r.recommended_model;
-        $("route-meta").textContent =
-          "任务: " + r.task_type + " · 复杂度: " + r.complexity +
-          " · 置信度: " + (r.confidence * 100).toFixed(0) + "%" +
-          (data.model_info?.display_name ? " · " + data.model_info.display_name : "");
-        $("route-json").textContent = JSON.stringify(data, null, 2);
-        $("route-result").style.display = "block";
-      } catch (e) {
-        $("route-error").textContent = e.message;
-      } finally {
-        $("btn-route").disabled = false;
-      }
-    });
-
-    // Chat
-    let chatMessages = [];
-
-    function renderChat() {
-      const log = $("chat-log");
-      log.innerHTML = "";
-      chatMessages.forEach((m) => {
-        const div = document.createElement("div");
-        div.className = "msg " + m.role;
-        div.innerHTML = '<div class="role">' + m.role + '</div>' + escapeHtml(m.content);
-        log.appendChild(div);
-      });
-      log.scrollTop = log.scrollHeight;
-    }
-
-    function escapeHtml(s) {
-      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-
-    $("btn-chat").addEventListener("click", async () => {
-      const text = $("chat-input").value.trim();
-      if (!text) return;
-      $("chat-error").textContent = "";
-      saveKeys();
-      chatMessages.push({ role: "user", content: text });
-      renderChat();
-      $("chat-input").value = "";
-      $("btn-chat").disabled = true;
-      try {
-        const data = await api("/v1/chat/completions", {
-          method: "POST",
-          headers: mergeHeaders(),
-          body: JSON.stringify({
-            model: $("chat-model").value,
-            messages: chatMessages,
-            max_tokens: 1024,
-          }),
-        });
-        const reply = data.choices?.[0]?.message?.content || "(空回复)";
-        chatMessages.push({ role: "assistant", content: reply });
-        renderChat();
-      } catch (e) {
-        chatMessages.pop();
-        renderChat();
-        $("chat-error").textContent = e.message;
-      } finally {
-        $("btn-chat").disabled = false;
-      }
-    });
-
-    $("btn-chat-clear").addEventListener("click", () => {
-      chatMessages = [];
-      renderChat();
-      $("chat-error").textContent = "";
-    });
-
-    // Usage
-    $("btn-usage").addEventListener("click", async () => {
-      $("usage-error").textContent = "";
-      $("usage-stats").innerHTML = "";
-      try {
-        const data = await api("/v1/usage/summary?days=30", {
-          headers: mergeHeaders(),
-        });
-        const items = [
-          ["总请求", data.total_requests ?? 0],
-          ["总花费 $", (data.total_cost_usd ?? 0).toFixed(4)],
-          ["节省 $", (data.total_saved_usd ?? 0).toFixed(4)],
-          ["缓存命中", data.cache_hits ?? 0],
-        ];
-        items.forEach(([lbl, val]) => {
-          const d = document.createElement("div");
-          d.className = "stat";
-          d.innerHTML = '<div class="val">' + val + '</div><div class="lbl">' + lbl + '</div>';
-          $("usage-stats").appendChild(d);
-        });
-        $("usage-json").textContent = JSON.stringify(data, null, 2);
-        $("usage-json").style.display = "block";
-      } catch (e) {
-        $("usage-error").textContent = e.message;
-      }
-    });
-
-    // Account
     $("btn-register").addEventListener("click", async () => {
       $("acc-error").textContent = "";
       $("acc-success").textContent = "";
@@ -536,18 +529,13 @@
             password: $("acc-password").value,
           }),
         });
-        localStorage.setItem(LS_TM, data.api_key);
-        $("tm-key").value = data.api_key;
-        $("saved-key").textContent = data.api_key.slice(0, 16) + "…";
-        $("acc-success").textContent = "注册成功！API Key 已保存到浏览器（仅显示一次，请自行备份）。";
-      } catch (e) {
-        $("acc-error").textContent = e.message;
-      }
+        setTmKey(data.api_key, data.user?.email);
+        $("acc-success").textContent = "注册成功！Key 已保存，请从上方复制代码开始调用。";
+      } catch (e) { $("acc-error").textContent = e.message; }
     });
 
     $("btn-login").addEventListener("click", async () => {
       $("acc-error").textContent = "";
-      $("acc-success").textContent = "";
       try {
         const data = await api("/v1/auth/login", {
           method: "POST",
@@ -555,31 +543,164 @@
           body: JSON.stringify({
             email: $("acc-email").value.trim(),
             password: $("acc-password").value,
+            create_new_key: $("login-new-key").checked,
           }),
         });
         if (data.api_key) {
-          localStorage.setItem(LS_TM, data.api_key);
-          $("tm-key").value = data.api_key;
-          $("saved-key").textContent = data.api_key.slice(0, 16) + "…";
+          setTmKey(data.api_key, data.user?.email);
+          $("acc-success").textContent = "已生成新 API Key 并保存。";
+        } else {
+          localStorage.setItem(LS_EMAIL, data.user?.email || "");
+          $("acc-success").textContent = "登录成功。勾选「生成新 Key」可获取完整 Key，或用已有 Key 粘贴到本地。";
+          if (getTmKey()) updateAuthUI();
         }
-        $("acc-success").textContent = "登录成功：" + (data.user?.email || "");
-      } catch (e) {
-        $("acc-error").textContent = e.message;
-      }
+      } catch (e) { $("acc-error").textContent = e.message; }
     });
 
-    $("btn-clear-key").addEventListener("click", () => {
-      localStorage.removeItem(LS_TM);
-      localStorage.removeItem(LS_KEYS);
-      $("tm-key").value = "";
-      $("saved-key").textContent = "（无）";
+    $("btn-new-key").addEventListener("click", async () => {
+      try {
+        const data = await api("/v1/auth/keys", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ name: "dashboard" }),
+        });
+        setTmKey(data.api_key, localStorage.getItem(LS_EMAIL));
+        alert("新 Key 已保存到浏览器，请立即备份。");
+      } catch (e) { alert(e.message); }
+    });
+
+    $("btn-save-key").addEventListener("click", () => {
+      const k = $("paste-key").value.trim();
+      if (!k.startsWith("tm_live_")) {
+        $("acc-error").textContent = "请输入以 tm_live_ 开头的 Key";
+        return;
+      }
+      $("acc-error").textContent = "";
+      setTmKey(k, localStorage.getItem(LS_EMAIL) || "");
+      $("acc-success").textContent = "Key 已保存到本浏览器。";
+    });
+
+    $("btn-logout").addEventListener("click", () => {
+      clearTmKey();
       document.querySelectorAll("[data-provider]").forEach((el) => { el.value = ""; });
     });
 
-    $("base-url").textContent = API + "/v1";
-    loadKeys();
+    async function loadDashboard() {
+      if (!getTmKey()) return;
+      $("dash-error").textContent = "";
+      try {
+        const [summary, recent] = await Promise.all([
+          api("/v1/usage/summary?days=30", { headers: authHeaders() }),
+          api("/v1/usage/recent?limit=10", { headers: authHeaders() }),
+        ]);
+        const saved = summary.total_saved_usd ?? 0;
+        const pct = summary.avg_savings_pct ?? 0;
+        $("hero-saved").textContent = "$" + Number(saved).toFixed(4);
+        $("hero-pct").textContent = "平均节省 " + Number(pct).toFixed(1) + "% · " + (summary.total_requests ?? 0) + " 次请求";
+
+        const stats = [
+          ["实际花费 $", (summary.total_cost_usd ?? 0).toFixed(4)],
+          ["基准花费 $", (summary.total_baseline_cost_usd ?? 0).toFixed(4)],
+          ["输入 tokens", summary.total_input_tokens ?? 0],
+          ["输出 tokens", summary.total_output_tokens ?? 0],
+          ["缓存命中", ((summary.cache_hit_rate ?? 0) * 100).toFixed(1) + "%"],
+          ["套餐", summary.subscription?.plan ?? "free"],
+        ];
+        $("usage-stats").innerHTML = "";
+        stats.forEach(([lbl, val]) => {
+          const d = document.createElement("div");
+          d.className = "stat";
+          d.innerHTML = '<div class="val">' + val + '</div><div class="lbl">' + lbl + '</div>';
+          $("usage-stats").appendChild(d);
+        });
+
+        const models = summary.model_breakdown || [];
+        $("model-table-wrap").innerHTML = models.length ? (
+          "<table><tr><th>模型</th><th>次数</th><th>节省 $</th><th>均节省%</th></tr>" +
+          models.map((m) => "<tr><td>" + m.model_key + "</td><td>" + m.calls + "</td><td>" +
+            (m.saved_usd ?? 0).toFixed(4) + "</td><td>" + (m.avg_savings_pct ?? 0).toFixed(1) + "%</td></tr>").join("") +
+          "</table>"
+        ) : "<p class='meta'>暂无数据，先发几次请求吧。</p>";
+
+        const reqs = recent.requests || [];
+        $("recent-table-wrap").innerHTML = reqs.length ? (
+          "<table><tr><th>时间</th><th>模型</th><th>任务</th><th>节省$</th></tr>" +
+          reqs.map((r) => {
+            const ts = new Date((r.ts || 0) * 1000).toLocaleString();
+            return "<tr><td>" + ts + "</td><td>" + (r.model_key || "-") + "</td><td>" +
+              (r.task_type || "-") + "</td><td>" + (r.saved_usd ?? 0).toFixed(4) + "</td></tr>";
+          }).join("") + "</table>"
+        ) : "<p class='meta'>暂无最近请求。</p>";
+      } catch (e) { $("dash-error").textContent = e.message; }
+    }
+
+    $("btn-dashboard-refresh").addEventListener("click", loadDashboard);
+
+    $("btn-route").addEventListener("click", async () => {
+      $("route-error").textContent = "";
+      try {
+        const body = { messages: [{ role: "user", content: $("route-prompt").value.trim() }] };
+        const tier = $("route-tier").value;
+        if (tier) body.x_tokenmesh_tier = tier;
+        const data = await api("/v1/routing/explain", {
+          method: "POST", headers: mergeHeaders(), body: JSON.stringify(body),
+        });
+        const r = data.routing;
+        $("route-model").textContent = r.recommended_model;
+        $("route-meta").textContent = "tier " + (r.route_tier || "-") + " · " + r.task_type + " · " + r.complexity;
+        $("route-json").textContent = JSON.stringify(data, null, 2);
+        $("route-result").style.display = "block";
+      } catch (e) { $("route-error").textContent = e.message; }
+    });
+
+    function renderChat() {
+      const log = $("chat-log");
+      log.innerHTML = "";
+      chatMessages.forEach((m) => {
+        const div = document.createElement("div");
+        div.className = "msg " + m.role;
+        div.innerHTML = '<div class="role">' + m.role + '</div>' + (m.content || "").replace(/</g, "&lt;");
+        log.appendChild(div);
+      });
+      log.scrollTop = log.scrollHeight;
+    }
+
+    $("btn-chat").addEventListener("click", async () => {
+      const text = $("chat-input").value.trim();
+      if (!text) return;
+      if (!getTmKey()) { $("chat-error").textContent = "请先在「快速开始」注册 API Key"; return; }
+      saveProviderKeys();
+      chatMessages.push({ role: "user", content: text });
+      renderChat();
+      $("chat-input").value = "";
+      $("chat-error").textContent = "";
+      try {
+        const data = await api("/v1/chat/completions", {
+          method: "POST",
+          headers: mergeHeaders(),
+          body: JSON.stringify({ model: $("chat-model").value, messages: chatMessages, max_tokens: 1024 }),
+        });
+        const reply = data.choices?.[0]?.message?.content || "(空)";
+        const tm = data.tokenmesh || {};
+        const extra = tm.savings ? "\n\n— 模型: " + (tm.routed_model || "") + " · 省 " + (tm.savings.saved_usd || 0) + " USD" : "";
+        chatMessages.push({ role: "assistant", content: reply + extra });
+        renderChat();
+        if (getTmKey()) loadDashboard();
+      } catch (e) {
+        chatMessages.pop();
+        renderChat();
+        $("chat-error").textContent = e.message;
+      }
+    });
+
+    $("btn-chat-clear").addEventListener("click", () => { chatMessages = []; renderChat(); });
+
+    updateAuthUI();
+    renderCodeSnippet();
+    loadProviderKeys();
     checkHealth();
     loadModels();
+    if (getTmKey()) loadDashboard();
   </script>
 </body>
 </html>

@@ -39,13 +39,13 @@ export function Navbar() {
 
         <div className="hidden items-center gap-3 md:flex">
           <a
-            href="#"
+            href="/console"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Sign in
           </a>
           <a
-            href="#pricing"
+            href="/console"
             className="group inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Start free
@@ -76,7 +76,7 @@ export function Navbar() {
               </a>
             ))}
             <a
-              href="#pricing"
+              href="/console"
               onClick={() => setOpen(false)}
               className="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
             >

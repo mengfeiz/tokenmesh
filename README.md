@@ -27,18 +27,44 @@ curl -s http://localhost:8080/v1/routing/explain \
   -d '{"messages":[{"role":"user","content":"写一个 Python 快排"}]}' | python3 -m json.tool
 ```
 
-浏览器打开 **http://localhost:8080/** 使用 Web 试用页（路由分析 / 对话 / 用量 / 注册）。
+**营销站 + 开发者控制台（推荐）：**
 
-API 文档：http://localhost:8080/docs
+```bash
+# 终端 1：API
+source .venv/bin/activate && tokenmesh
+
+# 终端 2：Next.js 前端
+npm install && npm run dev
+```
+
+- 首页：**http://localhost:3000/**
+- 开发者控制台：**http://localhost:3000/console**（注册 Key、复制代码、省钱看板）
+- API 文档：http://localhost:8080/docs
+
+也可直接访问 **http://localhost:8080/**（内置静态控制台，与 `/console` 功能相同）。
 
 ## 一键接入 Tokenmesh
 
-**把 OpenAI SDK 的 `base_url` 换成 Tokenmesh，`model` 写成 `auto` 即可。** 其余代码不用改。
+**把 OpenAI SDK 的 `base_url` 换成 Tokenmesh，`api_key` 换成你的 `tm_live_` Key，`model` 写成 `auto`。** 其余代码不用改。
+
+### 0. 获取你的 API Token（每人一个）
+
+在 **http://localhost:8080/** 点「注册并获取 Key」，或调用 API：
+
+```bash
+curl -s http://localhost:8080/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@company.com","password":"your-password"}'
+# 返回: { "api_key": "tm_live_xxxx...", "user": { ... } }
+```
+
+Key 只显示一次，请保存。后续请求带 `Authorization: Bearer tm_live_...`，用量会记到你的账号，可在「省钱看板」查看节省金额。
 
 ### 1. 环境变量（推荐）
 
 ```bash
 export TOKENMESH_BASE_URL=http://localhost:8080/v1
+export TOKENMESH_API_KEY=tm_live_...     # 注册时拿到
 export DEEPSEEK_API_KEY=sk-...          # 至少一个供应商 Key（BYOK）
 # 可选: OPENAI_API_KEY, QWEN_API_KEY, GOOGLE_API_KEY, ...
 ```
@@ -51,7 +77,7 @@ import os
 
 client = OpenAI(
     base_url=os.getenv("TOKENMESH_BASE_URL", "http://localhost:8080/v1"),
-    api_key="not-used",
+    api_key=os.environ["TOKENMESH_API_KEY"],
     default_headers={"X-DeepSeek-API-Key": os.environ["DEEPSEEK_API_KEY"]},
 )
 
@@ -65,13 +91,14 @@ print(r.choices[0].message.content)
 ### 3. curl（一条命令）
 
 ```bash
-DEEPSEEK_API_KEY=sk-... ./scripts/chat.sh "用 Python 写快排"
+TOKENMESH_API_KEY=tm_live_... DEEPSEEK_API_KEY=sk-... ./scripts/chat.sh "用 Python 写快排"
 ```
 
 或手写：
 
 ```bash
 curl -s http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer $TOKENMESH_API_KEY" \
   -H "Content-Type: application/json" \
   -H "X-DeepSeek-API-Key: $DEEPSEEK_API_KEY" \
   -d '{"model":"auto","messages":[{"role":"user","content":"你好"}]}'
@@ -87,18 +114,33 @@ curl -s http://localhost:8080/v1/chat/completions \
 
 在 Cursor 中打开本项目即可被 Agent 发现；或复制到 `~/.cursor/skills/tokenmesh/` 全局使用。
 
-### 5. 最小 API 表
+### 5. 省钱看板
+
+登录后打开控制台 **「省钱看板」** 标签，或带 Key 调 API：
+
+```bash
+curl -s "http://localhost:8080/v1/usage/summary?days=30" \
+  -H "Authorization: Bearer $TOKENMESH_API_KEY"
+```
+
+返回累计节省金额、平均节省比例、按模型分布、最近请求等。
+
+### 6. 最小 API 表
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| `POST` | `/v1/auth/register` | 注册，返回 `tm_live_` API Key（仅一次） |
+| `POST` | `/v1/auth/login` | 登录；`create_new_key: true` 可生成新 Key |
+| `GET` | `/v1/me` | 当前用户、套餐、`api_base`（需 Bearer Key） |
 | `POST` | `/v1/chat/completions` | **主接口**，与 OpenAI 完全兼容，`model=auto` |
 | `POST` | `/v1/routing/explain` | 只看路由决策，**不调用 LLM、不花钱** |
 | `GET` | `/v1/evolution/status` | 自我进化策略与预期节省 |
-| `GET` | `/v1/usage/summary` | 用量与省钱统计 |
+| `GET` | `/v1/usage/summary` | 用量与省钱统计（需 Bearer Key） |
+| `GET` | `/v1/usage/recent` | 最近请求列表（需 Bearer Key） |
 | `GET` | `/v1/models` | 支持的模型列表 |
 | `GET` | `/health` | 健康检查 |
 
-### 6. 响应里的 Tokenmesh 元数据
+### 7. 响应里的 Tokenmesh 元数据
 
 每次 `chat/completions` 响应会附带：
 

@@ -122,7 +122,13 @@ class AuthManager:
             "message": "Save your API key — it will not be shown again.",
         }
 
-    def login(self, email: str, password: str) -> dict:
+    def login(
+        self,
+        email: str,
+        password: str,
+        *,
+        create_new_key: bool = False,
+    ) -> dict:
         email = email.strip().lower()
         with self._connect() as conn:
             row = conn.execute(
@@ -134,10 +140,13 @@ class AuthManager:
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         keys = self.list_api_keys(row["id"])
-        return {
+        result = {
             "user": {"id": row["id"], "email": row["email"]},
             "api_keys": keys,
         }
+        if create_new_key:
+            result["api_key"] = self.create_api_key(row["id"], name="login")
+        return result
 
     def create_api_key(self, user_id: int, name: str = "default") -> str:
         raw_key = _generate_api_key()
