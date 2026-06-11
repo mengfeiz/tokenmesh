@@ -76,7 +76,7 @@ function Icon({ type }: { type: Cell["type"] }) {
 export function Comparison() {
   return (
     <section id="compare" className="border-b border-border/60">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         <div className="max-w-2xl">
           <p className="font-mono text-sm text-primary">Why Tokenmesh</p>
           <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -89,7 +89,8 @@ export function Comparison() {
           </p>
         </div>
 
-        <div className="mt-12 overflow-x-auto">
+        {/* Desktop table */}
+        <div className="mt-12 hidden overflow-x-auto md:block">
           <div className="min-w-[720px] overflow-hidden rounded-2xl border border-border">
             <div className="grid grid-cols-6 border-b border-border bg-secondary/40">
               <div className="px-5 py-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -134,6 +135,45 @@ export function Comparison() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="mt-10 space-y-4 md:hidden">
+          {rows.map((r) => {
+            const tm = r.cells[0]
+            return (
+              <div
+                key={r.label}
+                className="rounded-xl border border-border bg-card/60 p-4"
+              >
+                <p className="text-sm font-medium text-foreground">{r.label}</p>
+                <div className="mt-3 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/[0.06] px-3 py-2">
+                  <span className="text-xs font-semibold text-primary">Tokenmesh</span>
+                  <div className="flex items-center gap-2">
+                    <Icon type={tm.type} />
+                    <span className="font-mono text-xs text-foreground">{tm.v}</span>
+                  </div>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {columns.slice(1).map((col, i) => {
+                    const cell = r.cells[i + 1]
+                    return (
+                      <div
+                        key={col}
+                        className="rounded-lg border border-border/60 bg-background/40 px-2 py-1.5 text-center"
+                      >
+                        <p className="text-[10px] text-muted-foreground">{col}</p>
+                        <div className="mt-1 flex items-center justify-center gap-1">
+                          <Icon type={cell.type} />
+                          <span className="font-mono text-[10px] text-muted-foreground">{cell.v}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </section>

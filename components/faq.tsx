@@ -35,7 +35,7 @@ export function Faq() {
 
   return (
     <section id="faq" className="border-b border-border/60">
-      <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         <div className="text-center">
           <p className="font-mono text-sm text-primary">FAQ</p>
           <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -48,7 +48,7 @@ export function Faq() {
             <div key={i}>
               <button
                 onClick={() => setOpen(open === i ? null : i)}
-                className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+                className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left sm:px-6 sm:py-5"
                 aria-expanded={open === i}
               >
                 <span className="text-sm font-medium text-foreground">{f.q}</span>
@@ -59,7 +59,7 @@ export function Faq() {
                 )}
               </button>
               {open === i && (
-                <p className="px-6 pb-5 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+                <p className="px-4 pb-4 text-sm leading-relaxed text-muted-foreground sm:px-6 sm:pb-5">{f.a}</p>
               )}
             </div>
           ))}

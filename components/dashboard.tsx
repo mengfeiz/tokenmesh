@@ -11,7 +11,7 @@ const max = 74
 export function Dashboard() {
   return (
     <section className="border-b border-border/60">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div>
             <p className="font-mono text-sm text-primary">Savings dashboard</p>
@@ -24,7 +24,7 @@ export function Dashboard() {
               itself.
             </p>
 
-            <div className="mt-8 grid grid-cols-3 gap-4">
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
               {[
                 { v: "$34.10", l: "Saved this month" },
                 { v: "74%", l: "Avg cost reduction" },
@@ -69,14 +69,14 @@ export function Dashboard() {
               ))}
             </div>
 
-            <div className="mt-4 flex items-center gap-5 border-t border-border pt-4">
+            <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:gap-5">
               <span className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Saved
               </span>
               <span className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="h-2.5 w-2.5 rounded-sm bg-secondary" /> Actual spend
               </span>
-              <span className="ml-auto flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground sm:ml-auto">
                 <Database className="h-3.5 w-3.5" />
                 SQLite usage log
               </span>

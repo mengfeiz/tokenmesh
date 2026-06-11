@@ -62,7 +62,9 @@ export function RoutingDemo() {
             <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
             <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
           </div>
-          <span className="font-mono text-[11px] text-muted-foreground">POST /v1/routing/explain</span>
+          <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
+            POST /v1/routing/explain
+          </span>
         </div>
 
         <div className="rounded-xl border border-border bg-background p-4">
@@ -88,27 +90,27 @@ export function RoutingDemo() {
           </div>
 
           {/* routing flow */}
-          <div className="mt-4 flex items-center justify-between gap-2">
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-center">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Classified</p>
               <p className="mt-0.5 font-mono text-xs text-foreground">{ex.task}</p>
             </div>
-            <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
+            <ArrowRight className="mx-auto h-4 w-4 shrink-0 rotate-90 text-primary sm:rotate-0" />
             <div className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-center">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Complexity</p>
               <p className="mt-0.5 font-mono text-xs text-foreground">{ex.complexity}</p>
             </div>
-            <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
-            <div className="flex-[1.4] rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-center">
+            <ArrowRight className="mx-auto h-4 w-4 shrink-0 rotate-90 text-primary sm:rotate-0" />
+            <div className="flex-1 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-center sm:flex-[1.4]">
               <p className="text-[10px] uppercase tracking-wide text-primary">Routed to</p>
-              <p className="mt-0.5 truncate font-mono text-xs text-foreground">{ex.model}</p>
+              <p className="mt-0.5 break-all font-mono text-xs text-foreground sm:truncate">{ex.model}</p>
             </div>
           </div>
 
           {/* savings */}
-          <div className="mt-4 flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+          <div className="mt-4 flex flex-col gap-2 rounded-lg border border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
+              <Zap className="h-4 w-4 shrink-0 text-primary" />
               <span className="text-sm text-muted-foreground">
                 {qualityFirst ? "Quality-first route" : "Saved vs default GPT-4o"}
               </span>

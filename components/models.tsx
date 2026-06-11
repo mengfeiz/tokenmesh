@@ -22,7 +22,7 @@ const tierStyle: Record<string, string> = {
 export function Models() {
   return (
     <section id="models" className="border-b border-border/60">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div className="max-w-2xl">
             <p className="font-mono text-sm text-primary">The catalog</p>

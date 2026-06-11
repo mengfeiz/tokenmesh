@@ -34,7 +34,7 @@ client.chat.completions.create(
 export function HowItWorks() {
   return (
     <section id="how" className="border-b border-border/60">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         <div className="max-w-2xl">
           <p className="font-mono text-sm text-primary">How it works</p>
           <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -53,8 +53,8 @@ export function HowItWorks() {
           <CodeCard label="After — one URL change" tone="primary" code={codeAfter} />
         </div>
 
-        {/* routing table */}
-        <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-card/60">
+        {/* routing table — desktop */}
+        <div className="mt-10 hidden overflow-hidden rounded-2xl border border-border bg-card/60 md:block">
           <div className="grid grid-cols-12 border-b border-border bg-secondary/40 px-5 py-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             <span className="col-span-5">Task type</span>
             <span className="col-span-4">Routed to</span>
@@ -74,6 +74,26 @@ export function HowItWorks() {
               >
                 {r.saving}
               </span>
+            </div>
+          ))}
+        </div>
+
+        {/* routing table — mobile cards */}
+        <div className="mt-10 space-y-3 md:hidden">
+          {routes.map((r) => (
+            <div
+              key={r.task}
+              className="rounded-xl border border-border bg-card/60 p-4"
+            >
+              <p className="text-sm font-medium text-foreground">{r.task}</p>
+              <p className="mt-2 font-mono text-xs text-muted-foreground">{r.model}</p>
+              <p
+                className={`mt-2 font-mono text-xs ${
+                  r.saving.includes("cheaper") ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {r.saving}
+              </p>
             </div>
           ))}
         </div>
@@ -107,7 +127,7 @@ function CodeCard({
         </span>
         <span className="font-mono text-[11px] text-muted-foreground">main.py</span>
       </div>
-      <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-foreground">
+      <pre className="overflow-x-auto px-3 py-4 font-mono text-[11px] leading-relaxed text-foreground sm:px-4 sm:text-[12.5px]">
         <code>{code}</code>
       </pre>
     </div>

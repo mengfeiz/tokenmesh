@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Menu, X, ArrowRight } from "lucide-react"
 import { Logo } from "./logo"
 
@@ -14,6 +14,13 @@ const links = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : ""
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [open])
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -70,7 +77,7 @@ export function Navbar() {
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="rounded-md px-3 py-3 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 {l.label}
               </a>
@@ -78,7 +85,14 @@ export function Navbar() {
             <a
               href="/console"
               onClick={() => setOpen(false)}
-              className="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+              className="mt-2 rounded-md px-3 py-3 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              Sign in
+            </a>
+            <a
+              href="/console"
+              onClick={() => setOpen(false)}
+              className="mt-1 inline-flex items-center justify-center rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground"
             >
               Start free
             </a>

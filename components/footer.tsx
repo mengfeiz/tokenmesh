@@ -19,7 +19,7 @@ export function Footer() {
   return (
     <footer className="bg-background">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-5">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-10">
           <div className="lg:col-span-2">
             <a href="#" className="flex items-center gap-2.5" aria-label="Tokenmesh home">
               <Logo className="h-7 w-7" />

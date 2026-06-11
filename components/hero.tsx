@@ -13,20 +13,20 @@ export function Hero() {
         aria-hidden="true"
       />
 
-      <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 lg:px-8 lg:pb-28 lg:pt-24">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+      <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16 lg:px-8 lg:pb-28 lg:pt-24">
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-soft" />
-              Seed stage · The 35x era of LLM cost
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1 text-[11px] text-muted-foreground sm:text-xs">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary animate-pulse-soft" />
+              <span className="truncate">Seed stage · The 35x era of LLM cost</span>
             </div>
 
-            <h1 className="mt-6 text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-5 text-balance text-[1.75rem] font-semibold leading-[1.08] tracking-tight sm:mt-6 sm:text-5xl lg:text-6xl">
               Stop paying frontier prices for{" "}
               <span className="text-primary">non-frontier tasks</span>.
             </h1>
 
-            <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">
+            <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:mt-6 sm:text-lg">
               Tokenmesh is the intelligent LLM gateway that classifies every request and routes it
               to the cheapest model that can handle the job. One URL change. Cut your bill 60–80%.
             </p>
@@ -47,7 +47,7 @@ export function Hero() {
               </a>
             </div>
 
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
+            <ul className="mt-6 flex flex-col gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2">
               {trustPoints.map((p) => (
                 <li key={p} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Check className="h-4 w-4 text-primary" />

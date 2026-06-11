@@ -10,11 +10,11 @@ export function Stats() {
     <section className="border-b border-border/60">
       <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-y divide-border/60 sm:grid-cols-4 sm:divide-y-0 lg:px-8">
         {stats.map((s) => (
-          <div key={s.label} className="px-6 py-8 lg:py-10">
-            <div className="font-mono text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">
+          <div key={s.label} className="px-4 py-6 sm:px-6 sm:py-8 lg:py-10">
+            <div className="font-mono text-2xl font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
               {s.value}
             </div>
-            <p className="mt-2 text-sm leading-snug text-muted-foreground">{s.label}</p>
+            <p className="mt-1.5 text-xs leading-snug text-muted-foreground sm:mt-2 sm:text-sm">{s.label}</p>
           </div>
         ))}
       </div>

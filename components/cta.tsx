@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react"
 export function Cta() {
   return (
     <section className="border-b border-border/60">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         <div className="relative overflow-hidden rounded-3xl border border-border bg-card/60 px-6 py-16 text-center sm:px-12">
           <div className="absolute inset-0 bg-grid opacity-30" aria-hidden="true" />
           <div

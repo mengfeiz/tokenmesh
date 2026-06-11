@@ -233,10 +233,10 @@ export function DeveloperConsole() {
   ]
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">开发者控制台</h1>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">开发者控制台</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             每人一个 <code className="font-mono text-primary">tm_live_</code> Key · OpenAI 兼容 ·
             自动省钱
@@ -247,13 +247,13 @@ export function DeveloperConsole() {
         </span>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors ${
+            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm transition-colors sm:py-2 ${
               tab === t.id
                 ? "border-primary bg-primary/10 text-foreground"
                 : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -444,7 +444,8 @@ export function DeveloperConsole() {
                 </div>
                 <h3 className="mb-2 mt-6 text-sm font-medium text-muted-foreground">按模型分布</h3>
                 {(summary?.model_breakdown?.length ?? 0) > 0 ? (
-                  <table className="w-full text-sm">
+                  <div className="-mx-2 overflow-x-auto sm:mx-0">
+                  <table className="w-full min-w-[320px] text-sm">
                     <thead>
                       <tr className="text-left text-muted-foreground">
                         <th className="pb-2">模型</th>
@@ -464,12 +465,14 @@ export function DeveloperConsole() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">暂无数据，先发几次请求吧。</p>
                 )}
                 <h3 className="mb-2 mt-6 text-sm font-medium text-muted-foreground">最近请求</h3>
                 {recent.length > 0 ? (
-                  <table className="w-full text-sm">
+                  <div className="-mx-2 overflow-x-auto sm:mx-0">
+                  <table className="w-full min-w-[360px] text-sm">
                     <thead>
                       <tr className="text-left text-muted-foreground">
                         <th className="pb-2">时间</th>
@@ -491,6 +494,7 @@ export function DeveloperConsole() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">暂无最近请求。</p>
                 )}
@@ -554,8 +558,8 @@ export function DeveloperConsole() {
                 key={i}
                 className={`rounded-lg px-3 py-2 text-sm ${
                   m.role === "user"
-                    ? "ml-8 bg-secondary/80"
-                    : "mr-8 border-l-2 border-primary bg-card/80"
+                    ? "ml-2 bg-secondary/80 sm:ml-8"
+                    : "mr-2 border-l-2 border-primary bg-card/80 sm:mr-8"
                 }`}
               >
                 <p className="mb-1 text-[10px] uppercase text-muted-foreground">{m.role}</p>
@@ -617,7 +621,7 @@ export function DeveloperConsole() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-card/80 p-6 shadow-xl">
+    <div className="rounded-2xl border border-border bg-card/80 p-4 shadow-xl sm:p-6">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         <KeyRound className="h-5 w-5 text-primary" />
         {title}
@@ -637,7 +641,7 @@ function Step({
   children: React.ReactNode
 }) {
   return (
-    <div className="mb-8 grid grid-cols-[2rem_1fr] gap-4 last:mb-0">
+    <div className="mb-6 grid grid-cols-[1.75rem_1fr] gap-3 last:mb-0 sm:mb-8 sm:grid-cols-[2rem_1fr] sm:gap-4">
       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
         {n}
       </div>

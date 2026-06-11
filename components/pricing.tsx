@@ -65,7 +65,7 @@ const tiers = [
 export function Pricing() {
   return (
     <section id="pricing" className="border-b border-border/60">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-2xl text-center">
           <p className="font-mono text-sm text-primary">Pricing</p>
           <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -77,7 +77,7 @@ export function Pricing() {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-5 lg:grid-cols-4">
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {tiers.map((t) => (
             <div
               key={t.name}
